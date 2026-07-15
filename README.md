@@ -180,7 +180,7 @@ For Git/GitHub workflow, see **`docs/GITHUB_GUIDE.md`**.
 
 ## 📸 Screenshots
 
-> _Add screenshots after running the app locally:_
+<img src="appDash.png" alt="Dashboard" width="300">
 - `docs/screenshots/dashboard-overview.png` — live sensor cards + trend chart
 - `docs/screenshots/prediction-panel.png` — irrigation prediction result
 - `docs/screenshots/swagger-docs.png` — API documentation
