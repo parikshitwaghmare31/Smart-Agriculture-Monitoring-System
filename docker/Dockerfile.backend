@@ -1,0 +1,29 @@
+# --- Smart Agriculture Backend (FastAPI) ---
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System deps (kept minimal for a small final image)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python deps first for better layer caching
+COPY backend/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY backend/app /app/app
+COPY backend/.env.example /app/.env
+
+# Copy the trained ML model bundle produced by ml/scripts/train_model.py
+COPY ml/models /app/ml/models
+
+RUN mkdir -p /app/logs
+
+EXPOSE 8000
+
+ENV PYTHONUNBUFFERED=1
+ENV LOG_DIR=/app/logs
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
