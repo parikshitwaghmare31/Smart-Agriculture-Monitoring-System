@@ -1,5 +1,7 @@
 # 🌱 Smart Agriculture Monitoring System
 
+![CI](https://github.com/YOUR_USERNAME/smart-agriculture-monitoring/actions/workflows/ci.yml/badge.svg)
+
 An end-to-end **IoT + AI** system that collects real-time soil moisture,
 temperature, and humidity data from field sensors (real ESP32 hardware or a
 Python simulator), stores it in MongoDB, and uses a trained machine learning
@@ -180,10 +182,34 @@ For Git/GitHub workflow, see **`docs/GITHUB_GUIDE.md`**.
 
 ## 📸 Screenshots
 
-<img src="appDash.png" alt="Dashboard" width="300">
+> _Add screenshots after running the app locally:_
 - `docs/screenshots/dashboard-overview.png` — live sensor cards + trend chart
 - `docs/screenshots/prediction-panel.png` — irrigation prediction result
 - `docs/screenshots/swagger-docs.png` — API documentation
+
+---
+
+## ✅ Testing & CI
+
+A GitHub Actions workflow (`.github/workflows/ci.yml`) runs automatically on
+every push and pull request to `main`:
+
+| Job | What it checks |
+|---|---|
+| `ml-pipeline` | Regenerates the dataset, retrains the model, and enforces a quality gate (fails the build if classifier accuracy or F1 drops below 0.75) |
+| `backend-test` | Confirms the FastAPI app imports cleanly and runs `pytest` smoke tests (route registration, ML service predictions) — no MongoDB/MQTT required |
+| `frontend-build` | Installs locked dependencies (`npm ci`) and produces a production build |
+| `docker-build` | Builds all three Dockerfiles (backend, frontend, simulator) to catch broken images before merge |
+
+Run the backend tests locally:
+```bash
+cd backend
+pip install -r requirements.txt
+pytest tests/ -v
+```
+
+> Remember to replace `YOUR_USERNAME` in the CI badge URL above with your
+> actual GitHub username/org once you push this repo.
 
 ---
 
