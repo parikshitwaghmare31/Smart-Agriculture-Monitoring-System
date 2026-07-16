@@ -7,16 +7,15 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-      
     environment:
-      - MONGO_URI=mongodb+srv://parikshitwaghmare31_db_user:Amruta1999@cluster0.pn6exd2.mongodb.net/?appName=Cluster0
+      - MONGO_URI=${MONGO_URI}
       - MONGO_DB_NAME=smart_agriculture
-      - MQTT_BROKER_HOST=gf81afde.ala.asia-southeast1.emqxsl.com
-      - MQTT_BROKER_PORT=8883
+      - MQTT_BROKER_HOST=${MQTT_BROKER_HOST}
+      - MQTT_BROKER_PORT=${MQTT_BROKER_PORT}
       - MQTT_TOPIC=farm/sensors
-      - MQTT_USE_TLS=true
-      - MQTT_USERNAME=smartagri_mqtt
-      - MQTT_PASSWORD=Amruta031999
+      - MQTT_USE_TLS=${MQTT_USE_TLS}
+      - MQTT_USERNAME=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
       - MODEL_PATH=/app/ml/models/irrigation_model.pkl
       - CORS_ORIGINS=*
 
@@ -38,9 +37,9 @@ services:
     container_name: smart-agri-simulator
     restart: unless-stopped
     environment:
-      - MQTT_BROKER_HOST=gf81afde.ala.asia-southeast1.emqxsl.com
-      - MQTT_BROKER_PORT=8883
+      - MQTT_BROKER_HOST=${MQTT_BROKER_HOST}
+      - MQTT_BROKER_PORT=${MQTT_BROKER_PORT}
       - MQTT_TOPIC=farm/sensors
-      - MQTT_USE_TLS=true
-      - MQTT_USERNAME=smartagri_mqtt
-      - MQTT_PASSWORD=Amruta031999
+      - MQTT_USE_TLS=${MQTT_USE_TLS}
+      - MQTT_USERNAME=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
