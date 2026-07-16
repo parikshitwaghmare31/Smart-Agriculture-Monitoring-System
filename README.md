@@ -1,6 +1,6 @@
 # 🌱 Smart Agriculture Monitoring System
 
-![CI](https://github.com/YOUR_USERNAME/smart-agriculture-monitoring/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/parikshitwaghmare31/smart-agriculture-monitoring/actions/workflows/ci.yml/badge.svg)
 
 An end-to-end **IoT + AI** system that collects real-time soil moisture,
 temperature, and humidity data from field sensors (real ESP32 hardware or a
@@ -182,7 +182,7 @@ For Git/GitHub workflow, see **`docs/GITHUB_GUIDE.md`**.
 
 ## 📸 Screenshots
 
-> _Add screenshots after running the app locally:_
+<img src="appDash.png" alt="Dashboard Screenshot" width="450" >
 - `docs/screenshots/dashboard-overview.png` — live sensor cards + trend chart
 - `docs/screenshots/prediction-panel.png` — irrigation prediction result
 - `docs/screenshots/swagger-docs.png` — API documentation
