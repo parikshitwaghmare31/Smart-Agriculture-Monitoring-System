@@ -198,7 +198,8 @@ For Git/GitHub workflow, see **`docs/GITHUB_GUIDE.md`**.
 
 ## 📸 Screenshots
 
-> _Add screenshots after running the app locally:_
+<img src="frontend/src/Dashboardwebview.png" alt="webDashScreenshot" width="500">
+<img src="frontend/src/localDashboardview.png" alt="localDashScreenshot" width="500">
 - `docs/screenshots/dashboard-overview.png` — live sensor cards + trend chart
 - `docs/screenshots/prediction-panel.png` — irrigation prediction result
 - `docs/screenshots/swagger-docs.png` — API documentation
