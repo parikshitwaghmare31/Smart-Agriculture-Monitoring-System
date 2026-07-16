@@ -19,8 +19,8 @@ database = Database()
 async def connect_to_mongo():
     try:
         database.client = AsyncIOMotorClient(
-    settings.MONGO_URI, serverSelectionTimeoutMS=5000, tz_aware=True
-)
+            settings.MONGO_URI, serverSelectionTimeoutMS=5000, tz_aware=True
+        )
         database.db = database.client[settings.MONGO_DB_NAME]
         # Force a round-trip to verify connectivity early
         await database.client.admin.command("ping")

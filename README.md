@@ -1,6 +1,21 @@
 # 🌱 Smart Agriculture Monitoring System
 
-![CI](https://github.com/parikshitwaghmare31/smart-agriculture-monitoring/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/parikshitwaghmare31/Smart-Agriculture-Monitoring-System/actions/workflows/ci.yml/badge.svg)
+
+## 🚀 Live Demo
+
+| | |
+|---|---|
+| 🖥️ **Dashboard** | [smart-agriculture-frontend-zpsw.onrender.com](https://smart-agriculture-frontend-zpsw.onrender.com) |
+| 🔌 **API Docs (Swagger)** | [smart-agriculture-monitoring-system-i7ac.onrender.com/docs](https://smart-agriculture-monitoring-system-i7ac.onrender.com/docs) |
+| ❤️ **Health Check** | [.../api/v1/health](https://smart-agriculture-monitoring-system-i7ac.onrender.com/api/v1/health) |
+
+> **Note:** the backend runs on Render's free tier, which spins down after 15
+> minutes of inactivity. The *first* request after idle time may take
+> 30-60 seconds to respond while the server wakes up — subsequent requests
+> are fast. The dashboard's live sensor feed is powered by a Python IoT
+> simulator publishing continuously over MQTT (EMQX Cloud), so data should
+> start appearing within a few seconds of the backend waking up.
 
 An end-to-end **IoT + AI** system that collects real-time soil moisture,
 temperature, and humidity data from field sensors (real ESP32 hardware or a
@@ -10,7 +25,8 @@ visualizes live readings, historical trends, and predictions.
 
 Built with production practices in mind: clean layered architecture,
 environment-based configuration, structured logging, health checks, and a
-full Docker Compose stack.
+full Docker Compose stack. Deployed on **Render** (backend + frontend),
+**MongoDB Atlas** (database), and **EMQX Cloud** (MQTT broker over TLS).
 
 ---
 
@@ -182,7 +198,7 @@ For Git/GitHub workflow, see **`docs/GITHUB_GUIDE.md`**.
 
 ## 📸 Screenshots
 
-<img src="appDash.png" alt="Dashboard Screenshot" width="450" >
+> _Add screenshots after running the app locally:_
 - `docs/screenshots/dashboard-overview.png` — live sensor cards + trend chart
 - `docs/screenshots/prediction-panel.png` — irrigation prediction result
 - `docs/screenshots/swagger-docs.png` — API documentation
