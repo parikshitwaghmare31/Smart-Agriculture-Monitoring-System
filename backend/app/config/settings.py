@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     MQTT_TOPIC: str = "farm/sensors"
     MQTT_CLIENT_ID: str = "smart-agri-backend"
     MQTT_ENABLED: bool = True
+    MQTT_USE_TLS: bool = False
+    MQTT_USERNAME: str = ""
+    MQTT_PASSWORD: str = ""
+    MQTT_CA_CERT_PATH: str = ""
 
     # ML model
     MODEL_PATH: str = "/app/ml/models/irrigation_model.pkl"

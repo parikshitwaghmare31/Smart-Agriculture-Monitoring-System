@@ -1,30 +1,4 @@
-version: "3.9"
-
 services:
-  mongodb:
-    image: mongo:7
-    container_name: smart-agri-mongodb
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  mosquitto:
-    image: eclipse-mosquitto:2
-    container_name: smart-agri-mosquitto
-    restart: unless-stopped
-    ports:
-      - "1883:1883"
-      - "9001:9001"
-    volumes:
-      - ./docker/mosquitto.conf:/mosquitto/config/mosquitto.conf
-
   backend:
     build:
       context: .
@@ -33,24 +7,18 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+      
     environment:
-      - MONGO_URI=mongodb://mongodb:27017
+      - MONGO_URI=mongodb+srv://parikshitwaghmare31_db_user:Amruta1999@cluster0.pn6exd2.mongodb.net/?appName=Cluster0
       - MONGO_DB_NAME=smart_agriculture
-      - MQTT_BROKER_HOST=mosquitto
-      - MQTT_BROKER_PORT=1883
+      - MQTT_BROKER_HOST=gf81afde.ala.asia-southeast1.emqxsl.com
+      - MQTT_BROKER_PORT=8883
       - MQTT_TOPIC=farm/sensors
+      - MQTT_USE_TLS=true
+      - MQTT_USERNAME=smartagri_mqtt
+      - MQTT_PASSWORD=Amruta031999
       - MODEL_PATH=/app/ml/models/irrigation_model.pkl
       - CORS_ORIGINS=*
-    depends_on:
-      mongodb:
-        condition: service_healthy
-      mosquitto:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
 
   frontend:
     build:
@@ -70,11 +38,9 @@ services:
     container_name: smart-agri-simulator
     restart: unless-stopped
     environment:
-      - MQTT_BROKER_HOST=mosquitto
-      - MQTT_BROKER_PORT=1883
+      - MQTT_BROKER_HOST=gf81afde.ala.asia-southeast1.emqxsl.com
+      - MQTT_BROKER_PORT=8883
       - MQTT_TOPIC=farm/sensors
-    depends_on:
-      - mosquitto
-
-volumes:
-  mongo_data:
+      - MQTT_USE_TLS=true
+      - MQTT_USERNAME=smartagri_mqtt
+      - MQTT_PASSWORD=Amruta031999

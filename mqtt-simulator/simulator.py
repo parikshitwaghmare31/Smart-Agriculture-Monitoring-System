@@ -24,6 +24,9 @@ import paho.mqtt.client as mqtt
 MQTT_BROKER_HOST = os.getenv("MQTT_BROKER_HOST", "localhost")
 MQTT_BROKER_PORT = int(os.getenv("MQTT_BROKER_PORT", "1883"))
 MQTT_TOPIC = os.getenv("MQTT_TOPIC", "farm/sensors")
+MQTT_USE_TLS = os.getenv("MQTT_USE_TLS", "false").lower() == "true"
+MQTT_USERNAME = os.getenv("MQTT_USERNAME", "")
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD", "")
 
 
 class VirtualSensor:
@@ -65,7 +68,14 @@ def main():
 
     client = mqtt.Client(client_id="esp32-simulator", callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
 
-    print(f"Connecting to MQTT broker at {args.broker}:{args.port} ...")
+    if MQTT_USERNAME:
+        client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
+
+    if MQTT_USE_TLS:
+        client.tls_set()  # uses system CA trust store; fine for publicly-trusted cloud brokers
+        client.tls_insecure_set(False)
+
+    print(f"Connecting to MQTT broker at {args.broker}:{args.port} (TLS={'on' if MQTT_USE_TLS else 'off'}) ...")
     client.connect(args.broker, args.port, keepalive=60)
     client.loop_start()
 

@@ -35,6 +35,18 @@ class MQTTService:
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
 
+        if settings.MQTT_USERNAME:
+            self.client.username_pw_set(settings.MQTT_USERNAME, settings.MQTT_PASSWORD)
+
+        if settings.MQTT_USE_TLS:
+            # ca_certs=None with tls_set() uses the system CA trust store,
+            # which is sufficient for most managed brokers (e.g. EMQX Cloud,
+            # HiveMQ Cloud) since they use publicly-trusted certificates.
+            # If MQTT_CA_CERT_PATH is provided, pin it explicitly instead.
+            ca_certs = settings.MQTT_CA_CERT_PATH or None
+            self.client.tls_set(ca_certs=ca_certs)
+            self.client.tls_insecure_set(False)
+
     def start(self):
         try:
             self.client.connect(settings.MQTT_BROKER_HOST, settings.MQTT_BROKER_PORT, keepalive=60)
