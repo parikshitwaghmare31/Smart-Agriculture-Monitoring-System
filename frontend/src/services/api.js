@@ -9,8 +9,13 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-export const getLatestReadings = (limit = 10) =>
-  api.get(`/sensor-data/latest`, { params: { limit } }).then((r) => r.data);
+export const getLatestReadings = (limit = 10, deviceId = null) =>
+  api
+    .get(`/sensor-data/latest`, { params: { limit, device_id: deviceId } })
+    .then((r) => r.data);
+
+export const getDevices = () =>
+  api.get(`/sensor-data/devices`).then((r) => r.data);
 
 export const getSensorHistory = (deviceId, limit = 100) =>
   api

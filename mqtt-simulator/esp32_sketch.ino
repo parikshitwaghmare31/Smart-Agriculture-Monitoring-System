@@ -2,6 +2,8 @@
   esp32_sketch.ino
   -----------------
   Real ESP32 firmware for the Smart Agriculture Monitoring System.
+  Updated to connect to EMQX Cloud over TLS (port 8883) with username/password
+  authentication, matching the project's current cloud MQTT setup.
 
   Hardware:
     - Capacitive soil moisture sensor -> analog pin 34
@@ -15,9 +17,13 @@
     - PubSubClient
     - DHT sensor library (Adafruit)
     - ArduinoJson
+
+  IMPORTANT: Give every physical device a UNIQUE DEVICE_ID below (e.g.
+  esp32-field-01, esp32-field-02, ...) so the dashboard can tell them apart.
 */
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 #include <DHT.h>
 #include <ArduinoJson.h>
@@ -26,11 +32,32 @@
 const char* WIFI_SSID     = "YOUR_WIFI_SSID";
 const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// ---- MQTT ----
-const char* MQTT_BROKER   = "192.168.1.100";   // your broker IP
-const int   MQTT_PORT     = 1883;
+// ---- MQTT (EMQX Cloud) ----
+const char* MQTT_BROKER   = "gf81afde.ala.asia-southeast1.emqxsl.com";
+const int   MQTT_PORT     = 8883;               // TLS port
 const char* MQTT_TOPIC    = "farm/sensors";
+const char* MQTT_USERNAME = "smartagri_mqtt";
+const char* MQTT_PASSWORD = "YOUR_MQTT_PASSWORD";
+
+// vvv CHANGE THIS FOR EACH PHYSICAL DEVICE vvv
 const char* DEVICE_ID     = "esp32-field-01";
+// ^^^ e.g. esp32-field-02, esp32-field-03 for additional units ^^^
+
+// ---- TLS ----
+// Option A (simplest, OK for hobby/demo projects): skip certificate
+// validation entirely. This still encrypts traffic but does not verify
+// the broker's identity, so it's vulnerable to man-in-the-middle attacks
+// on untrusted networks. Fine for a home WiFi network demo.
+#define USE_INSECURE_TLS true
+
+// Option B (recommended for anything beyond a demo): paste the CA
+// certificate you downloaded from the EMQX Cloud console below, and set
+// USE_INSECURE_TLS to false. This validates the broker's identity properly.
+const char* EMQX_ROOT_CA = R"EOF(
+-----BEGIN CERTIFICATE-----
+PASTE THE CONTENTS OF YOUR DOWNLOADED emqxsl-ca.crt FILE HERE
+-----END CERTIFICATE-----
+)EOF";
 
 // ---- Sensors ----
 #define SOIL_MOISTURE_PIN 34
@@ -38,7 +65,7 @@ const char* DEVICE_ID     = "esp32-field-01";
 #define DHT_TYPE DHT22
 
 DHT dht(DHT_PIN, DHT_TYPE);
-WiFiClient espClient;
+WiFiClientSecure espClient;
 PubSubClient mqttClient(espClient);
 
 const unsigned long PUBLISH_INTERVAL_MS = 5000;
@@ -60,8 +87,8 @@ void connectWiFi() {
 
 void connectMQTT() {
   while (!mqttClient.connected()) {
-    Serial.print("Connecting to MQTT broker...");
-    if (mqttClient.connect(DEVICE_ID)) {
+    Serial.print("Connecting to MQTT broker over TLS...");
+    if (mqttClient.connect(DEVICE_ID, MQTT_USERNAME, MQTT_PASSWORD)) {
       Serial.println("connected");
     } else {
       Serial.print("failed, rc=");
@@ -83,7 +110,15 @@ void setup() {
   Serial.begin(115200);
   dht.begin();
   connectWiFi();
+
+  if (USE_INSECURE_TLS) {
+    espClient.setInsecure();
+  } else {
+    espClient.setCACert(EMQX_ROOT_CA);
+  }
+
   mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+  mqttClient.setBufferSize(300);  // small headroom above the default 256 bytes
 }
 
 void loop() {

@@ -2,33 +2,40 @@ import React, { useEffect, useState, useCallback } from "react";
 import SensorCard from "../components/SensorCard";
 import PredictionPanel from "../components/PredictionPanel";
 import SensorChart from "../components/SensorChart";
-import { getLatestReadings, getSensorHistory, checkHealth } from "../services/api";
+import DeviceSelector from "../components/DeviceSelector";
+import { getLatestReadings, getSensorHistory, getDevices, checkHealth } from "../services/api";
 
 const POLL_INTERVAL_MS = 5000;
 
 export default function Dashboard() {
   const [latest, setLatest] = useState(null);
   const [history, setHistory] = useState([]);
+  const [devices, setDevices] = useState([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState(null); // null = "All devices"
   const [health, setHealth] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
 
   const refresh = useCallback(async () => {
     try {
-      const [latestReadings, historyData, healthData] = await Promise.all([
-        getLatestReadings(1),
-        getSensorHistory(null, 50),
+      const [latestReadings, historyData, devicesData, healthData] = await Promise.all([
+        getLatestReadings(1, selectedDeviceId),
+        getSensorHistory(selectedDeviceId, 50),
+        getDevices(),
         checkHealth(),
       ]);
       if (latestReadings && latestReadings.length > 0) {
         setLatest(latestReadings[0]);
+      } else {
+        setLatest(null); // e.g. selected device has no readings yet
       }
       setHistory(historyData.data || []);
+      setDevices(devicesData.devices || []);
       setHealth(healthData);
       setLastUpdated(new Date());
     } catch (err) {
       console.error("Failed to refresh dashboard data", err);
     }
-  }, []);
+  }, [selectedDeviceId]);
 
   useEffect(() => {
     refresh();
@@ -42,13 +49,23 @@ export default function Dashboard() {
         <div>
           <h1>🌱 Smart Agriculture Monitoring</h1>
           <p className="subtitle">
-            {latest ? `Device: ${latest.device_id}` : "Waiting for sensor data..."}
+            {selectedDeviceId
+              ? `Viewing: ${selectedDeviceId}`
+              : latest
+              ? `Viewing: All devices (showing ${latest.device_id})`
+              : "Waiting for sensor data..."}
           </p>
         </div>
         <div className={`status-badge ${health?.mongo_connected ? "online" : "offline"}`}>
           {health?.mongo_connected ? "● Live" : "● Disconnected"}
         </div>
       </header>
+
+      <DeviceSelector
+        devices={devices}
+        selectedDeviceId={selectedDeviceId}
+        onSelect={setSelectedDeviceId}
+      />
 
       <section className="sensor-cards">
         <SensorCard

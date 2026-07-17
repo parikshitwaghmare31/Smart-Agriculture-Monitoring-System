@@ -40,6 +40,24 @@
   color: #c62828;
 }
 
+.device-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #444;
+}
+
+.device-selector select {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  cursor: pointer;
+}
+
 .sensor-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
