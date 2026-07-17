@@ -198,12 +198,14 @@ For Git/GitHub workflow, see **`docs/GITHUB_GUIDE.md`**.
 
 ## 📸 Screenshots
 
-<img src="frontend/src/Dashboardwebview.png" alt="webDashScreenshot" width="500">
-<img src="frontend/src/localDashboardview.png" alt="localDashScreenshot" width="500">
-- `docs/screenshots/dashboard-overview.png` — live sensor cards + trend chart
-- `docs/screenshots/prediction-panel.png` — irrigation prediction result
-- `docs/screenshots/swagger-docs.png` — API documentation
+<img src="docs/dashboard-overview.png" alt="webDashScreenshot1" width="300">
+<img src="docs/live-sensor-cards+trend-chart.png" alt="localDashScreenshot" width="300">
+<img src="docs/Live_Sonsor_card.png" alt="localDashScreenshot" width="300">
+<img src="docs/Trend_chart.png" alt="localDashScreenshot" width="300">
+<img src="docs/Irrigation-Prediction-Result.png" alt="localDashScreenshot" width="300">
+<img src="docs/swagger-docs.png" alt="localDashScreenshot" width="300">
 
+[ Note: You may add your live Dashboard like this into your readme.md]
 ---
 
 ## ✅ Testing & CI
