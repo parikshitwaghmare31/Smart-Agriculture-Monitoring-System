@@ -7,7 +7,7 @@ import { getLatestReadings, getSensorHistory, getDevices, checkHealth } from "..
 
 const POLL_INTERVAL_MS = 5000;
 
-export default function Dashboard() {
+export default function Dashboard({ user, onLogout, onOpenAdminPanel }) {
   const [latest, setLatest] = useState(null);
   const [history, setHistory] = useState([]);
   const [devices, setDevices] = useState([]);
@@ -60,6 +60,22 @@ export default function Dashboard() {
           {health?.mongo_connected ? "● Live" : "● Disconnected"}
         </div>
       </header>
+
+      <div className="user-bar">
+        <span className="user-bar-name">
+          👤 {user?.full_name} <span className="muted-text">({user?.role})</span>
+        </span>
+        <div className="user-bar-actions">
+          {user?.role === "admin" && (
+            <button className="btn-secondary" onClick={onOpenAdminPanel}>
+              🛠️ Admin Panel
+            </button>
+          )}
+          <button className="btn-secondary" onClick={onLogout}>
+            Sign Out
+          </button>
+        </div>
+      </div>
 
       <DeviceSelector
         devices={devices}

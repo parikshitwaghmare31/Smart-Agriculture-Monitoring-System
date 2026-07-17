@@ -18,6 +18,21 @@ class Settings(BaseSettings):
     MONGO_DB_NAME: str = "smart_agriculture"
     SENSOR_COLLECTION: str = "sensor_readings"
     PREDICTION_COLLECTION: str = "predictions"
+    USER_COLLECTION: str = "users"
+    DEVICE_COLLECTION: str = "devices"
+
+    # Auth
+    JWT_SECRET_KEY: str = "change-this-secret-in-production"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 60 * 24  # 24 hours
+
+    # Bootstrap: on first startup, if no admin user exists yet, one is
+    # created automatically from these credentials. Set these as real
+    # secrets in production (Render env vars), then you can log in as
+    # admin immediately without manual DB setup.
+    ADMIN_BOOTSTRAP_EMAIL: str = ""
+    ADMIN_BOOTSTRAP_PASSWORD: str = ""
+    ADMIN_BOOTSTRAP_NAME: str = "Administrator"
 
     # MQTT
     MQTT_BROKER_HOST: str = "localhost"

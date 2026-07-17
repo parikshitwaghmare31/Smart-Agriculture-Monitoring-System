@@ -9,6 +9,29 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// Attach the JWT bearer token (if present) to every outgoing request.
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("access_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// If the token is invalid/expired, clear it and force back to the login
+// screen rather than showing a confusing broken dashboard.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const getLatestReadings = (limit = 10, deviceId = null) =>
   api
     .get(`/sensor-data/latest`, { params: { limit, device_id: deviceId } })

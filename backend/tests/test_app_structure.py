@@ -17,9 +17,15 @@ EXPECTED_PATHS = {
     "/api/v1/health",
     "/api/v1/sensor-data",
     "/api/v1/sensor-data/latest",
+    "/api/v1/sensor-data/devices",
     "/api/v1/predict",
     "/api/v1/history/sensors",
     "/api/v1/history/predictions",
+    "/api/v1/auth/register",
+    "/api/v1/auth/login",
+    "/api/v1/auth/me",
+    "/api/v1/devices",
+    "/api/v1/devices/my",
     "/",
 }
 

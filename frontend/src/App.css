@@ -222,3 +222,192 @@
   font-size: 12px;
   margin-top: 24px;
 }
+
+/* ---- Auth pages (Login / Register) ---- */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1b5e20 0%, #4a7c2f 100%);
+  padding: 20px;
+}
+
+.auth-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 36px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.auth-card h1 {
+  text-align: center;
+  color: #1b5e20;
+  margin: 0 0 4px;
+  font-size: 22px;
+}
+
+.auth-card h2 {
+  text-align: center;
+  color: #444;
+  margin: 0 0 24px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #555;
+  gap: 5px;
+}
+
+.auth-form input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.auth-error {
+  color: #c62828;
+  font-size: 13px;
+  background: #ffebee;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin: 0;
+}
+
+.auth-success {
+  color: #2e7d32;
+  font-size: 14px;
+  background: #e8f5e9;
+  padding: 10px 12px;
+  border-radius: 6px;
+}
+
+.auth-tip {
+  font-size: 13px;
+  color: #666;
+  background: #f4f7f5;
+  padding: 10px 12px;
+  border-radius: 6px;
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 13px;
+  color: #666;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #2e7d32;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* ---- User bar (shown at the top of the dashboard) ---- */
+.user-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 10px 16px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  font-size: 14px;
+}
+
+.user-bar-name {
+  color: #333;
+}
+
+.user-bar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.muted-text {
+  color: #999;
+  font-size: 12px;
+}
+
+/* ---- Admin panel ---- */
+.app-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.app-shell-nav {
+  margin-bottom: 16px;
+}
+
+.admin-panel h2 {
+  color: #1b5e20;
+  margin-bottom: 20px;
+}
+
+.admin-panel .panel {
+  margin-bottom: 24px;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 480px;
+  margin-top: 12px;
+}
+
+.admin-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  color: #555;
+  gap: 5px;
+}
+
+.admin-form input {
+  padding: 9px 11px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.admin-table th,
+.admin-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.admin-table th {
+  color: #666;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+}
