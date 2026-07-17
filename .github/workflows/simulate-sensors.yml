@@ -1,0 +1,49 @@
+name: Simulate Sensor Data
+
+# Runs on a schedule to publish a short burst of sensor readings to EMQX
+# Cloud, standing in for an always-on IoT simulator without needing a paid
+# background-worker hosting tier. Data arrives in periodic bursts rather
+# than a continuous stream — a reasonable trade-off for a free-tier demo.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#   MQTT_BROKER_HOST
+#   MQTT_BROKER_PORT
+#   MQTT_USE_TLS
+#   MQTT_USERNAME
+#   MQTT_PASSWORD
+
+on:
+  schedule:
+    # Every 10 minutes. GitHub may delay scheduled runs under high platform
+    # load, so treat this as "roughly every 10 minutes," not exact.
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}  # allows manually triggering a run from the Actions tab
+
+jobs:
+  publish-burst:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        working-directory: mqtt-simulator
+        run: pip install -r requirements.txt
+
+      - name: Publish a burst of sensor readings
+        working-directory: mqtt-simulator
+        env:
+          MQTT_BROKER_HOST: ${{ secrets.MQTT_BROKER_HOST }}
+          MQTT_BROKER_PORT: ${{ secrets.MQTT_BROKER_PORT }}
+          MQTT_USE_TLS: ${{ secrets.MQTT_USE_TLS }}
+          MQTT_USERNAME: ${{ secrets.MQTT_USERNAME }}
+          MQTT_PASSWORD: ${{ secrets.MQTT_PASSWORD }}
+        run: |
+          python simulator.py \
+            --devices 3 \
+            --interval 5 \
+            --max-iterations 6

@@ -64,6 +64,12 @@ def main():
     parser.add_argument("--broker", type=str, default=MQTT_BROKER_HOST)
     parser.add_argument("--port", type=int, default=MQTT_BROKER_PORT)
     parser.add_argument("--topic", type=str, default=MQTT_TOPIC)
+    parser.add_argument(
+        "--max-iterations",
+        type=int,
+        default=None,
+        help="If set, publish this many rounds then exit (used for scheduled burst runs, e.g. GitHub Actions). Default: run forever.",
+    )
     args = parser.parse_args()
 
     client = mqtt.Client(client_id="esp32-simulator", callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
@@ -85,17 +91,24 @@ def main():
     print("Press Ctrl+C to stop.\n")
 
     try:
-        while True:
+        iteration = 0
+        while args.max_iterations is None or iteration < args.max_iterations:
             for sensor in sensors:
                 payload = sensor.read()
                 client.publish(args.topic, json.dumps(payload), qos=1)
                 print(f"Published: {payload}")
+            iteration += 1
             time.sleep(args.interval)
     except KeyboardInterrupt:
         print("\nStopping simulator...")
     finally:
+        # Give the last batch of QoS 1 publishes a moment to actually flush
+        # to the broker before disconnecting, especially important in burst
+        # mode where the process exits immediately after the loop.
+        time.sleep(1)
         client.loop_stop()
         client.disconnect()
+        print(f"Simulator finished after {iteration} iteration(s).")
 
 
 if __name__ == "__main__":
