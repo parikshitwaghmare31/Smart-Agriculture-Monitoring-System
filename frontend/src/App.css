@@ -411,3 +411,13 @@
   font-size: 12px;
   text-transform: uppercase;
 }
+
+.empty-state-banner {
+  background: #fff8e1;
+  border-left: 4px solid #f9a825;
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #5d4a10;
+  margin-bottom: 20px;
+}

@@ -81,25 +81,69 @@ async def get_latest_readings(
 @router.get("/devices")
 async def list_devices(current_user: dict = Depends(get_current_user)):
     """
-    Returns every distinct device_id seen in sensor_readings that the current
-    user is allowed to see (all of them for admins, only owned ones for
-    farmers), each with its most recent reading.
+    Returns every device the current user is allowed to see, based on the
+    `devices` registry (not just devices that happen to have sensor
+    readings). This means a freshly-registered device shows up immediately
+    with has_data=false, rather than being invisible until its first
+    reading arrives.
+
+    Farmers: only devices registered to them.
+    Admins: every registered device, PLUS any device_id that is publishing
+    sensor readings but was never formally registered (e.g. a simulator or
+    test device an admin hasn't assigned to a farmer yet) — surfaced with
+    label=None so admins can spot and register unclaimed devices.
     """
     db = get_database()
     if db is None:
         raise HTTPException(status_code=503, detail="Database not available")
 
-    allowed = await get_allowed_device_ids(current_user, db)
+    is_admin = current_user.get("role") == "admin"
 
-    query = {"device_id": {"$in": allowed}} if allowed is not None else {}
-    device_ids = await db[settings.SENSOR_COLLECTION].distinct("device_id", query)
+    registered_query = {} if is_admin else {"owner_email": current_user["email"]}
+    registered_devices = [d async for d in db[settings.DEVICE_COLLECTION].find(registered_query)]
+    registered_ids = {d["device_id"] for d in registered_devices}
 
     devices = []
-    for device_id in sorted(device_ids):
+    for device in registered_devices:
         latest = await db[settings.SENSOR_COLLECTION].find_one(
-            {"device_id": device_id}, sort=[("timestamp", -1)]
+            {"device_id": device["device_id"]}, sort=[("timestamp", -1)]
         )
-        if latest:
-            devices.append(_serialize(latest))
+        owner = None
+        if is_admin:
+            owner = await db[settings.USER_COLLECTION].find_one({"email": device["owner_email"]})
 
+        devices.append(
+            {
+                "device_id": device["device_id"],
+                "label": device.get("label"),
+                "owner_email": device.get("owner_email"),
+                "owner_name": owner.get("full_name") if owner else None,
+                "location": device.get("location"),
+                "has_data": latest is not None,
+                "latest_reading": _serialize(latest) if latest else None,
+            }
+        )
+
+    if is_admin:
+        # Surface devices that are publishing readings but were never
+        # registered/assigned, so nothing silently disappears from view.
+        all_reading_device_ids = await db[settings.SENSOR_COLLECTION].distinct("device_id")
+        orphan_ids = sorted(set(all_reading_device_ids) - registered_ids)
+        for device_id in orphan_ids:
+            latest = await db[settings.SENSOR_COLLECTION].find_one(
+                {"device_id": device_id}, sort=[("timestamp", -1)]
+            )
+            devices.append(
+                {
+                    "device_id": device_id,
+                    "label": None,
+                    "owner_email": None,
+                    "owner_name": None,
+                    "location": None,
+                    "has_data": True,
+                    "latest_reading": _serialize(latest) if latest else None,
+                }
+            )
+
+    devices.sort(key=lambda d: d["device_id"])
     return {"count": len(devices), "devices": devices}

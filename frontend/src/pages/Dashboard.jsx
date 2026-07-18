@@ -43,6 +43,10 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel }) {
     return () => clearInterval(interval);
   }, [refresh]);
 
+  const selectedDevice = selectedDeviceId
+    ? devices.find((d) => d.device_id === selectedDeviceId)
+    : null;
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -82,6 +86,22 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel }) {
         selectedDeviceId={selectedDeviceId}
         onSelect={setSelectedDeviceId}
       />
+
+      {devices.length === 0 && (
+        <div className="empty-state-banner">
+          {user?.role === "admin"
+            ? "No devices have been registered yet. Use the Admin Panel to register a sensor node and assign it to a farmer."
+            : "No sensor nodes are linked to your account yet. Contact your administrator to have your device registered and assigned to you."}
+        </div>
+      )}
+
+      {devices.length > 0 && selectedDevice && !selectedDevice.has_data && (
+        <div className="empty-state-banner">
+          "{selectedDevice.label || selectedDevice.device_id}" is registered but hasn't sent any
+          readings yet. Once the sensor node powers on and publishes data, it will appear here
+          automatically.
+        </div>
+      )}
 
       <section className="sensor-cards">
         <SensorCard
