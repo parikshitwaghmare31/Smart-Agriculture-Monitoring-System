@@ -27,3 +27,11 @@ export const registerDevice = (deviceId, label, ownerEmail, location) =>
   api
     .post("/devices", { device_id: deviceId, label, owner_email: ownerEmail, location })
     .then((r) => r.data);
+
+export const updateDevice = (deviceId, updates) =>
+  api.patch(`/devices/${encodeURIComponent(deviceId)}`, updates).then((r) => r.data);
+
+export const deleteDevice = (deviceId) =>
+  api.delete(`/devices/${encodeURIComponent(deviceId)}`).then((r) => r.data);
+
+export const getAllUsers = () => api.get("/users").then((r) => r.data);

@@ -31,6 +31,7 @@ from app.routes import (
     health_routes,
     auth_routes,
     device_routes,
+    user_routes,
 )
 
 
@@ -102,6 +103,7 @@ app.add_middleware(
 app.include_router(health_routes.router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth_routes.router, prefix=settings.API_V1_PREFIX)
 app.include_router(device_routes.router, prefix=settings.API_V1_PREFIX)
+app.include_router(user_routes.router, prefix=settings.API_V1_PREFIX)
 app.include_router(sensor_routes.router, prefix=settings.API_V1_PREFIX)
 app.include_router(predict_routes.router, prefix=settings.API_V1_PREFIX)
 app.include_router(history_routes.router, prefix=settings.API_V1_PREFIX)

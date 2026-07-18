@@ -20,6 +20,10 @@ class UserOut(BaseModel):
     created_at: datetime
 
 
+class UserWithDeviceCount(UserOut):
+    device_count: int = 0
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -30,6 +34,15 @@ class DeviceCreate(BaseModel):
     device_id: str = Field(..., examples=["esp32-field-04"])
     label: str = Field(..., description="Friendly name, e.g. 'North Field Plot A'")
     owner_email: EmailStr = Field(..., description="Must belong to an already-registered farmer")
+    location: Optional[str] = None
+
+
+class DeviceUpdate(BaseModel):
+    """All fields optional — only the ones provided get updated (partial update)."""
+    label: Optional[str] = None
+    owner_email: Optional[EmailStr] = Field(
+        default=None, description="Reassign this device to a different registered farmer"
+    )
     location: Optional[str] = None
 
 
