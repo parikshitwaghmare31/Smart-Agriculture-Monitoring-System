@@ -24,6 +24,14 @@ class UserWithDeviceCount(UserOut):
     device_count: int = 0
 
 
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[Literal["admin", "farmer"]] = None
+    new_password: Optional[str] = Field(
+        default=None, min_length=8, description="Admin-triggered password reset for this user"
+    )
+
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -35,6 +43,15 @@ class DeviceCreate(BaseModel):
     label: str = Field(..., description="Friendly name, e.g. 'North Field Plot A'")
     owner_email: EmailStr = Field(..., description="Must belong to an already-registered farmer")
     location: Optional[str] = None
+    area_value: Optional[float] = Field(
+        default=None, gt=0, description="Size of the field this sensor covers"
+    )
+    area_unit: Literal["acre", "hectare", "square_meter", "square_feet"] = "acre"
+    flow_rate_lph: Optional[float] = Field(
+        default=None, gt=0,
+        description="Your irrigation system's total flow rate in liters/hour (drip/sprinkler/etc), "
+                    "used to convert a water recommendation into a run-time duration",
+    )
 
 
 class DeviceUpdate(BaseModel):
@@ -44,6 +61,9 @@ class DeviceUpdate(BaseModel):
         default=None, description="Reassign this device to a different registered farmer"
     )
     location: Optional[str] = None
+    area_value: Optional[float] = Field(default=None, gt=0)
+    area_unit: Optional[Literal["acre", "hectare", "square_meter", "square_feet"]] = None
+    flow_rate_lph: Optional[float] = Field(default=None, gt=0)
 
 
 class DeviceOut(BaseModel):
@@ -52,4 +72,7 @@ class DeviceOut(BaseModel):
     owner_email: EmailStr
     owner_name: Optional[str] = None
     location: Optional[str] = None
+    area_value: Optional[float] = None
+    area_unit: Optional[str] = None
+    flow_rate_lph: Optional[float] = None
     created_at: datetime

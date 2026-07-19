@@ -2,21 +2,28 @@
 Route for irrigation prediction.
 
   POST /api/v1/predict -> given soil_moisture, temperature, humidity,
-                           returns whether to irrigate and how much water to use.
+                           returns whether to irrigate and how much water to use
+                           (as a per-square-meter depth, scaled to the requesting
+                           device's registered field size if one is set).
                            Also persists the prediction for later review.
 """
 
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Depends
 
-from app.models.schemas import PredictionRequest, PredictionResponse
+from app.models.schemas import PredictionRequest, PredictionResponse, FieldAreaInfo
 from app.services.ml_service import ml_service
+from app.services.irrigation_area_utils import compute_total_water_needed
 from app.config.settings import settings
 from app.config.database import get_database
 from app.config.logging_config import app_logger
 from app.services.auth_deps import get_current_user
 
 router = APIRouter(prefix="/predict", tags=["Prediction"])
+
+# Placeholder device_ids used by the dashboard's manual prediction form when
+# no specific real device is selected — these never have a registered area.
+_NON_DEVICE_IDS = {"manual-request", "dashboard-manual"}
 
 
 @router.post("", response_model=PredictionResponse)
@@ -31,15 +38,32 @@ async def predict_irrigation(
         app_logger.error(f"Prediction failed: {e}")
         raise HTTPException(status_code=500, detail="Prediction failed") from e
 
+    field_area = None
+    db = get_database()
+
+    if irrigate and db is not None and payload.device_id not in _NON_DEVICE_IDS:
+        device = await db[settings.DEVICE_COLLECTION].find_one({"device_id": payload.device_id})
+        if device and device.get("area_value"):
+            try:
+                area_info = compute_total_water_needed(
+                    water_depth_liters_per_sqm=water_amount,
+                    area_value=device["area_value"],
+                    area_unit=device.get("area_unit", "acre"),
+                    flow_rate_lph=device.get("flow_rate_lph"),
+                )
+                field_area = FieldAreaInfo(**area_info)
+            except ValueError as e:
+                app_logger.warning(f"Could not compute field area for {payload.device_id}: {e}")
+
     response = PredictionResponse(
         irrigate=irrigate,
         confidence=confidence,
         water_amount_liters=water_amount,
+        field_area=field_area,
         reasoning=reasoning,
         timestamp=datetime.now(timezone.utc),
     )
 
-    db = get_database()
     if db is not None:
         record = response.model_dump()
         record["device_id"] = payload.device_id

@@ -23,9 +23,17 @@ export const getMyDevices = () => api.get("/devices/my").then((r) => r.data);
 
 export const getAllDevices = () => api.get("/devices").then((r) => r.data);
 
-export const registerDevice = (deviceId, label, ownerEmail, location) =>
+export const registerDevice = (deviceId, label, ownerEmail, location, areaValue, areaUnit, flowRateLph) =>
   api
-    .post("/devices", { device_id: deviceId, label, owner_email: ownerEmail, location })
+    .post("/devices", {
+      device_id: deviceId,
+      label,
+      owner_email: ownerEmail,
+      location,
+      area_value: areaValue || null,
+      area_unit: areaUnit || "acre",
+      flow_rate_lph: flowRateLph || null,
+    })
     .then((r) => r.data);
 
 export const updateDevice = (deviceId, updates) =>

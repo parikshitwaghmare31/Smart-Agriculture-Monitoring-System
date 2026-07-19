@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { requestPrediction } from "../services/api";
 
-export default function PredictionPanel({ latestReading }) {
+export default function PredictionPanel({ latestReading, selectedDeviceId }) {
   const [form, setForm] = useState({ soil_moisture: 40, temperature: 28, humidity: 50 });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,11 @@ export default function PredictionPanel({ latestReading }) {
     setLoading(true);
     setError(null);
     try {
-      const data = await requestPrediction({ ...form, device_id: "dashboard-manual" });
+      // Pass the actual selected device (if one is chosen, not "All devices")
+      // so the backend can look up its registered field area and scale the
+      // recommendation to a real total volume, instead of just a per-m^2 figure.
+      const deviceId = selectedDeviceId || "dashboard-manual";
+      const data = await requestPrediction({ ...form, device_id: deviceId });
       setResult(data);
     } catch (err) {
       setError("Prediction request failed. Is the backend running?");
@@ -68,11 +72,43 @@ export default function PredictionPanel({ latestReading }) {
           <div className="prediction-result-headline">
             {result.irrigate ? "💧 Irrigation Recommended" : "✅ No Irrigation Needed"}
           </div>
+
           {result.irrigate && (
-            <div className="prediction-water-amount">
-              Recommended water: <strong>{result.water_amount_liters} L</strong>
-            </div>
+            <>
+              {result.field_area ? (
+                <div className="prediction-water-amount">
+                  <div className="prediction-total-water">
+                    Total for your {result.field_area.area_value} {result.field_area.area_unit}{" "}
+                    field: <strong>{result.field_area.total_liters_needed.toLocaleString()} L</strong>
+                  </div>
+                  {result.field_area.recommended_duration_hours !== null && (
+                    <div className="prediction-duration">
+                      Run your irrigation system for approximately{" "}
+                      <strong>{result.field_area.recommended_duration_hours} hours</strong> at its
+                      rated flow rate.
+                    </div>
+                  )}
+                  <div className="prediction-depth-note muted-text">
+                    (Irrigation depth: {result.water_amount_liters} L/m² — equivalent to{" "}
+                    {result.water_amount_liters}mm of water)
+                  </div>
+                </div>
+              ) : (
+                <div className="prediction-water-amount">
+                  <div>
+                    Recommended irrigation depth: <strong>{result.water_amount_liters} L/m²</strong>{" "}
+                    <span className="muted-text">(equivalent to {result.water_amount_liters}mm)</span>
+                  </div>
+                  <p className="auth-tip">
+                    This is a per-square-meter figure. To see the total liters needed for your
+                    actual field, ask your administrator to register your field's size (and
+                    optionally your irrigation system's flow rate) for this device.
+                  </p>
+                </div>
+              )}
+            </>
           )}
+
           <div className="prediction-confidence">
             Confidence: {(result.confidence * 100).toFixed(1)}%
           </div>

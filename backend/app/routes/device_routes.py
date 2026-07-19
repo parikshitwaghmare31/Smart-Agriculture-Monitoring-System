@@ -49,6 +49,9 @@ async def register_device(payload: DeviceCreate, admin: dict = Depends(require_a
         "label": payload.label,
         "owner_email": payload.owner_email,
         "location": payload.location,
+        "area_value": payload.area_value,
+        "area_unit": payload.area_unit,
+        "flow_rate_lph": payload.flow_rate_lph,
         "created_at": datetime.now(timezone.utc),
         "created_by": admin["email"],
     }
@@ -111,6 +114,12 @@ async def update_device(
         updates["label"] = payload.label
     if payload.location is not None:
         updates["location"] = payload.location
+    if payload.area_value is not None:
+        updates["area_value"] = payload.area_value
+    if payload.area_unit is not None:
+        updates["area_unit"] = payload.area_unit
+    if payload.flow_rate_lph is not None:
+        updates["flow_rate_lph"] = payload.flow_rate_lph
     if payload.owner_email is not None:
         new_owner = await db[settings.USER_COLLECTION].find_one({"email": payload.owner_email})
         if not new_owner:

@@ -135,7 +135,7 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDise
 
       <section className="dashboard-grid">
         <SensorChart data={history} />
-        <PredictionPanel latestReading={latest} />
+        <PredictionPanel latestReading={latest} selectedDeviceId={selectedDeviceId} />
       </section>
 
       <footer className="dashboard-footer">

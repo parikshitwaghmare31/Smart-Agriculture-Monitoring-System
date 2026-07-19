@@ -27,10 +27,26 @@ class PredictionRequest(BaseModel):
     device_id: Optional[str] = "manual-request"
 
 
+class FieldAreaInfo(BaseModel):
+    area_value: float
+    area_unit: str
+    area_square_meters: float
+    total_liters_needed: float
+    recommended_duration_hours: Optional[float] = None
+
+
 class PredictionResponse(BaseModel):
     irrigate: bool
     confidence: float
-    water_amount_liters: float
+    water_amount_liters: float = Field(
+        description="Irrigation depth in liters per square meter (equivalently, mm of water depth) — "
+        "a per-unit-area figure, not the total for any specific field size"
+    )
+    field_area: Optional[FieldAreaInfo] = Field(
+        default=None,
+        description="Present only if the request's device_id has a registered field area, "
+        "scaling the recommendation to a real total volume and (if flow rate is known) run-time",
+    )
     reasoning: str
     timestamp: datetime
 

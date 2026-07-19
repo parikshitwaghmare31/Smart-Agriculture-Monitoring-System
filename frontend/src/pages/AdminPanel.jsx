@@ -81,7 +81,15 @@ export default function AdminPanel() {
 }
 
 function RegisterDeviceTab() {
-  const [form, setForm] = useState({ device_id: "", label: "", owner_email: "", location: "" });
+  const [form, setForm] = useState({
+    device_id: "",
+    label: "",
+    owner_email: "",
+    location: "",
+    area_value: "",
+    area_unit: "acre",
+    flow_rate_lph: "",
+  });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -94,9 +102,25 @@ function RegisterDeviceTab() {
     setSuccess(null);
     setLoading(true);
     try {
-      await registerDevice(form.device_id, form.label, form.owner_email, form.location || null);
+      await registerDevice(
+        form.device_id,
+        form.label,
+        form.owner_email,
+        form.location || null,
+        form.area_value ? parseFloat(form.area_value) : null,
+        form.area_unit,
+        form.flow_rate_lph ? parseFloat(form.flow_rate_lph) : null
+      );
       setSuccess(`Device "${form.device_id}" registered and assigned to ${form.owner_email}.`);
-      setForm({ device_id: "", label: "", owner_email: "", location: "" });
+      setForm({
+        device_id: "",
+        label: "",
+        owner_email: "",
+        location: "",
+        area_value: "",
+        area_unit: "acre",
+        flow_rate_lph: "",
+      });
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to register device.");
     } finally {
@@ -152,6 +176,43 @@ function RegisterDeviceTab() {
           />
         </label>
 
+        <div className="admin-form-row">
+          <label>
+            Field Size <span className="optional">(optional, enables total water calc)</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              name="area_value"
+              value={form.area_value}
+              onChange={handleChange}
+              placeholder="e.g. 1"
+            />
+          </label>
+          <label>
+            Unit
+            <select name="area_unit" value={form.area_unit} onChange={handleChange}>
+              <option value="acre">Acre</option>
+              <option value="hectare">Hectare</option>
+              <option value="square_meter">Square Meter</option>
+              <option value="square_feet">Square Feet</option>
+            </select>
+          </label>
+        </div>
+
+        <label>
+          Irrigation System Flow Rate (L/hour) <span className="optional">(optional, enables duration estimate)</span>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            name="flow_rate_lph"
+            value={form.flow_rate_lph}
+            onChange={handleChange}
+            placeholder="e.g. 4000 (check your drip/sprinkler system's rated flow rate)"
+          />
+        </label>
+
         {error && <p className="auth-error">{error}</p>}
         {success && <p className="auth-success">{success}</p>}
 
@@ -163,10 +224,18 @@ function RegisterDeviceTab() {
   );
 }
 
+
 function ManageDevicesTab() {
   const [devices, setDevices] = useState([]);
   const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({ label: "", owner_email: "", location: "" });
+  const [editForm, setEditForm] = useState({
+    label: "",
+    owner_email: "",
+    location: "",
+    area_value: "",
+    area_unit: "acre",
+    flow_rate_lph: "",
+  });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -191,6 +260,9 @@ function ManageDevicesTab() {
       label: device.label || "",
       owner_email: device.owner_email || "",
       location: device.location || "",
+      area_value: device.area_value ?? "",
+      area_unit: device.area_unit || "acre",
+      flow_rate_lph: device.flow_rate_lph ?? "",
     });
     setError(null);
   };
@@ -202,7 +274,12 @@ function ManageDevicesTab() {
 
   const saveEditing = async (deviceId) => {
     try {
-      await updateDevice(deviceId, editForm);
+      const payload = {
+        ...editForm,
+        area_value: editForm.area_value !== "" ? parseFloat(editForm.area_value) : null,
+        flow_rate_lph: editForm.flow_rate_lph !== "" ? parseFloat(editForm.flow_rate_lph) : null,
+      };
+      await updateDevice(deviceId, payload);
       setEditingId(null);
       loadDevices();
     } catch (err) {
@@ -238,6 +315,8 @@ function ManageDevicesTab() {
               <th>Label</th>
               <th>Owner Email</th>
               <th>Location</th>
+              <th>Field Area</th>
+              <th>Flow Rate (L/hr)</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -268,6 +347,37 @@ function ManageDevicesTab() {
                         onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
                       />
                     </td>
+                    <td>
+                      <div className="inline-edit-area-group">
+                        <input
+                          className="inline-edit-input"
+                          type="number"
+                          step="0.01"
+                          placeholder="size"
+                          value={editForm.area_value}
+                          onChange={(e) => setEditForm({ ...editForm, area_value: e.target.value })}
+                        />
+                        <select
+                          className="inline-edit-input"
+                          value={editForm.area_unit}
+                          onChange={(e) => setEditForm({ ...editForm, area_unit: e.target.value })}
+                        >
+                          <option value="acre">acre</option>
+                          <option value="hectare">hectare</option>
+                          <option value="square_meter">m²</option>
+                          <option value="square_feet">ft²</option>
+                        </select>
+                      </div>
+                    </td>
+                    <td>
+                      <input
+                        className="inline-edit-input"
+                        type="number"
+                        step="0.1"
+                        value={editForm.flow_rate_lph}
+                        onChange={(e) => setEditForm({ ...editForm, flow_rate_lph: e.target.value })}
+                      />
+                    </td>
                     <td className="admin-table-actions">
                       <button className="btn-secondary" onClick={() => saveEditing(d.device_id)}>
                         Save
@@ -284,6 +394,10 @@ function ManageDevicesTab() {
                       {d.owner_name || "—"} <span className="muted-text">({d.owner_email})</span>
                     </td>
                     <td>{d.location || "—"}</td>
+                    <td>
+                      {d.area_value ? `${d.area_value} ${d.area_unit === "square_meter" ? "m²" : d.area_unit === "square_feet" ? "ft²" : d.area_unit}` : "—"}
+                    </td>
+                    <td>{d.flow_rate_lph ? `${d.flow_rate_lph} L/hr` : "—"}</td>
                     <td className="admin-table-actions">
                       <button className="btn-secondary" onClick={() => startEditing(d)}>
                         Edit
@@ -299,6 +413,11 @@ function ManageDevicesTab() {
           </tbody>
         </table>
       )}
+      <p className="muted-text" style={{ marginTop: "10px" }}>
+        Setting a field area enables the irrigation prediction to show total liters needed for
+        the whole field, not just a per-square-meter figure. Adding a flow rate also estimates
+        how long to run the irrigation system.
+      </p>
     </div>
   );
 }
