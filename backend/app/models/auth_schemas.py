@@ -49,8 +49,34 @@ class DeviceCreate(BaseModel):
     area_unit: Literal["acre", "hectare", "square_meter", "square_feet"] = "acre"
     flow_rate_lph: Optional[float] = Field(
         default=None, gt=0,
-        description="Your irrigation system's total flow rate in liters/hour (drip/sprinkler/etc), "
-                    "used to convert a water recommendation into a run-time duration",
+        description="Direct irrigation system flow rate in liters/hour, if known. "
+                    "If you instead provide the detailed system parameters below "
+                    "(row spacing, emitter spacing, emitter discharge, and pump info), "
+                    "the effective flow rate is calculated automatically and this value is ignored.",
+    )
+
+    # Detailed irrigation system parameters — used to CALCULATE flow_rate_lph
+    # automatically instead of guessing it, and to warn about pump/demand mismatches.
+    crop: Optional[str] = Field(default=None, description="e.g. 'Ladyfinger (Okra)'")
+    row_spacing_cm: Optional[float] = Field(
+        default=None, gt=0, description="Distance between drip lateral lines / crop rows"
+    )
+    emitter_spacing_cm: Optional[float] = Field(
+        default=None, gt=0, description="Distance between emitters along a drip lateral"
+    )
+    emitter_discharge_lph: Optional[float] = Field(
+        default=None, gt=0, description="Each emitter's rated discharge, e.g. 4 for a 4 LPH dripper"
+    )
+    pipe_diameter_mm: Optional[float] = Field(
+        default=None, gt=0, description="Drip lateral pipe diameter (for reference; doesn't affect the calculation)"
+    )
+    pump_hp: Optional[float] = Field(
+        default=None, gt=0, description="Pump horsepower, used to ESTIMATE discharge if pump_rated_discharge_lph isn't known"
+    )
+    pump_rated_discharge_lph: Optional[float] = Field(
+        default=None, gt=0,
+        description="Pump's actual rated discharge from its nameplate/catalog, if known — "
+                    "much more accurate than estimating from horsepower alone",
     )
 
 
@@ -64,6 +90,13 @@ class DeviceUpdate(BaseModel):
     area_value: Optional[float] = Field(default=None, gt=0)
     area_unit: Optional[Literal["acre", "hectare", "square_meter", "square_feet"]] = None
     flow_rate_lph: Optional[float] = Field(default=None, gt=0)
+    crop: Optional[str] = None
+    row_spacing_cm: Optional[float] = Field(default=None, gt=0)
+    emitter_spacing_cm: Optional[float] = Field(default=None, gt=0)
+    emitter_discharge_lph: Optional[float] = Field(default=None, gt=0)
+    pipe_diameter_mm: Optional[float] = Field(default=None, gt=0)
+    pump_hp: Optional[float] = Field(default=None, gt=0)
+    pump_rated_discharge_lph: Optional[float] = Field(default=None, gt=0)
 
 
 class DeviceOut(BaseModel):
@@ -75,4 +108,11 @@ class DeviceOut(BaseModel):
     area_value: Optional[float] = None
     area_unit: Optional[str] = None
     flow_rate_lph: Optional[float] = None
+    crop: Optional[str] = None
+    row_spacing_cm: Optional[float] = None
+    emitter_spacing_cm: Optional[float] = None
+    emitter_discharge_lph: Optional[float] = None
+    pipe_diameter_mm: Optional[float] = None
+    pump_hp: Optional[float] = None
+    pump_rated_discharge_lph: Optional[float] = None
     created_at: datetime

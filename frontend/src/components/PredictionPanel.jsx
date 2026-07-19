@@ -77,15 +77,32 @@ export default function PredictionPanel({ latestReading, selectedDeviceId }) {
             <>
               {result.field_area ? (
                 <div className="prediction-water-amount">
+                  {result.field_area.zones_needed > 1 && (
+                    <div className="prediction-zones-warning">
+                      ⚠️ Your pump can't cover the whole field at once — split irrigation into{" "}
+                      <strong>{result.field_area.zones_needed} zones/shifts</strong>, cycling
+                      through them one at a time.
+                    </div>
+                  )}
                   <div className="prediction-total-water">
                     Total for your {result.field_area.area_value} {result.field_area.area_unit}{" "}
                     field: <strong>{result.field_area.total_liters_needed.toLocaleString()} L</strong>
                   </div>
                   {result.field_area.recommended_duration_hours !== null && (
                     <div className="prediction-duration">
-                      Run your irrigation system for approximately{" "}
-                      <strong>{result.field_area.recommended_duration_hours} hours</strong> at its
-                      rated flow rate.
+                      Total pump run-time needed: approximately{" "}
+                      <strong>{result.field_area.recommended_duration_hours} hours</strong>
+                      {result.field_area.zones_needed > 1 ? ", split across all zones" : ""}.
+                    </div>
+                  )}
+                  {result.field_area.system_demand_lph && (
+                    <div className="prediction-system-details">
+                      System: {result.field_area.num_emitters?.toLocaleString()} emitters demanding{" "}
+                      {result.field_area.system_demand_lph.toLocaleString()} L/hr · Pump supplies{" "}
+                      {result.field_area.pump_supply_lph.toLocaleString()} L/hr
+                      {result.field_area.pump_supply_is_estimated
+                        ? " (estimated from HP — enter your pump's actual rated discharge for a more accurate figure)"
+                        : ""}
                     </div>
                   )}
                   <div className="prediction-depth-note muted-text">

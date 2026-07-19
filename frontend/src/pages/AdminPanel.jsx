@@ -88,13 +88,23 @@ function RegisterDeviceTab() {
     location: "",
     area_value: "",
     area_unit: "acre",
+    crop: "",
+    row_spacing_cm: "",
+    emitter_spacing_cm: "",
+    emitter_discharge_lph: "",
+    pipe_diameter_mm: "",
+    pump_hp: "",
+    pump_rated_discharge_lph: "",
     flow_rate_lph: "",
   });
+  const [useDetailedParams, setUseDetailedParams] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const asFloatOrNull = (v) => (v === "" ? null : parseFloat(v));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -102,24 +112,32 @@ function RegisterDeviceTab() {
     setSuccess(null);
     setLoading(true);
     try {
-      await registerDevice(
-        form.device_id,
-        form.label,
-        form.owner_email,
-        form.location || null,
-        form.area_value ? parseFloat(form.area_value) : null,
-        form.area_unit,
-        form.flow_rate_lph ? parseFloat(form.flow_rate_lph) : null
-      );
+      const irrigationParams = {
+        area_value: asFloatOrNull(form.area_value),
+        area_unit: form.area_unit,
+      };
+
+      if (useDetailedParams) {
+        Object.assign(irrigationParams, {
+          crop: form.crop || null,
+          row_spacing_cm: asFloatOrNull(form.row_spacing_cm),
+          emitter_spacing_cm: asFloatOrNull(form.emitter_spacing_cm),
+          emitter_discharge_lph: asFloatOrNull(form.emitter_discharge_lph),
+          pipe_diameter_mm: asFloatOrNull(form.pipe_diameter_mm),
+          pump_hp: asFloatOrNull(form.pump_hp),
+          pump_rated_discharge_lph: asFloatOrNull(form.pump_rated_discharge_lph),
+        });
+      } else {
+        irrigationParams.flow_rate_lph = asFloatOrNull(form.flow_rate_lph);
+      }
+
+      await registerDevice(form.device_id, form.label, form.owner_email, form.location || null, irrigationParams);
       setSuccess(`Device "${form.device_id}" registered and assigned to ${form.owner_email}.`);
       setForm({
-        device_id: "",
-        label: "",
-        owner_email: "",
-        location: "",
-        area_value: "",
-        area_unit: "acre",
-        flow_rate_lph: "",
+        device_id: "", label: "", owner_email: "", location: "",
+        area_value: "", area_unit: "acre", crop: "", row_spacing_cm: "",
+        emitter_spacing_cm: "", emitter_discharge_lph: "", pipe_diameter_mm: "",
+        pump_hp: "", pump_rated_discharge_lph: "", flow_rate_lph: "",
       });
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to register device.");
@@ -134,60 +152,30 @@ function RegisterDeviceTab() {
       <form onSubmit={handleSubmit} className="admin-form">
         <label>
           Device ID
-          <input
-            type="text"
-            name="device_id"
-            value={form.device_id}
-            onChange={handleChange}
-            placeholder="e.g. esp32-field-04"
-            required
-          />
+          <input type="text" name="device_id" value={form.device_id} onChange={handleChange}
+            placeholder="e.g. esp32-field-04" required />
         </label>
         <label>
           Label
-          <input
-            type="text"
-            name="label"
-            value={form.label}
-            onChange={handleChange}
-            placeholder="e.g. North Field Plot A"
-            required
-          />
+          <input type="text" name="label" value={form.label} onChange={handleChange}
+            placeholder="e.g. North Field Plot A" required />
         </label>
         <label>
           Owner's Email (farmer must already be registered)
-          <input
-            type="email"
-            name="owner_email"
-            value={form.owner_email}
-            onChange={handleChange}
-            placeholder="farmer@example.com"
-            required
-          />
+          <input type="email" name="owner_email" value={form.owner_email} onChange={handleChange}
+            placeholder="farmer@example.com" required />
         </label>
         <label>
           Location <span className="optional">(optional)</span>
-          <input
-            type="text"
-            name="location"
-            value={form.location}
-            onChange={handleChange}
-            placeholder="e.g. Nashik, Maharashtra"
-          />
+          <input type="text" name="location" value={form.location} onChange={handleChange}
+            placeholder="e.g. Nashik, Maharashtra" />
         </label>
 
         <div className="admin-form-row">
           <label>
             Field Size <span className="optional">(optional, enables total water calc)</span>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              name="area_value"
-              value={form.area_value}
-              onChange={handleChange}
-              placeholder="e.g. 1"
-            />
+            <input type="number" step="0.01" min="0" name="area_value" value={form.area_value}
+              onChange={handleChange} placeholder="e.g. 1" />
           </label>
           <label>
             Unit
@@ -200,18 +188,72 @@ function RegisterDeviceTab() {
           </label>
         </div>
 
-        <label>
-          Irrigation System Flow Rate (L/hour) <span className="optional">(optional, enables duration estimate)</span>
+        <label className="checkbox-label">
           <input
-            type="number"
-            step="0.1"
-            min="0"
-            name="flow_rate_lph"
-            value={form.flow_rate_lph}
-            onChange={handleChange}
-            placeholder="e.g. 4000 (check your drip/sprinkler system's rated flow rate)"
+            type="checkbox"
+            checked={useDetailedParams}
+            onChange={(e) => setUseDetailedParams(e.target.checked)}
           />
+          Calculate flow rate from actual drip system parameters (recommended — much more
+          accurate than guessing a flow rate directly)
         </label>
+
+        {useDetailedParams ? (
+          <>
+            <p className="auth-tip">
+              The flow rate will be calculated automatically from these, and will also warn you
+              if the pump can't cover the whole field at once (common — most fields need to be
+              irrigated in zones/shifts).
+            </p>
+            <label>
+              Crop <span className="optional">(optional, for reference)</span>
+              <input type="text" name="crop" value={form.crop} onChange={handleChange}
+                placeholder="e.g. Ladyfinger (Okra)" />
+            </label>
+            <div className="admin-form-row">
+              <label>
+                Row Spacing (cm)
+                <input type="number" step="0.1" min="0" name="row_spacing_cm" value={form.row_spacing_cm}
+                  onChange={handleChange} placeholder="e.g. 45" required={useDetailedParams} />
+              </label>
+              <label>
+                Emitter Spacing (cm)
+                <input type="number" step="0.1" min="0" name="emitter_spacing_cm" value={form.emitter_spacing_cm}
+                  onChange={handleChange} placeholder="e.g. 20" required={useDetailedParams} />
+              </label>
+            </div>
+            <div className="admin-form-row">
+              <label>
+                Emitter Discharge (L/hr each)
+                <input type="number" step="0.1" min="0" name="emitter_discharge_lph" value={form.emitter_discharge_lph}
+                  onChange={handleChange} placeholder="e.g. 4" required={useDetailedParams} />
+              </label>
+              <label>
+                Drip Pipe Diameter (mm) <span className="optional">(reference only)</span>
+                <input type="number" step="0.1" min="0" name="pipe_diameter_mm" value={form.pipe_diameter_mm}
+                  onChange={handleChange} placeholder="e.g. 20" />
+              </label>
+            </div>
+            <div className="admin-form-row">
+              <label>
+                Pump Rated Discharge (L/hr) <span className="optional">(best if known — check nameplate)</span>
+                <input type="number" step="1" min="0" name="pump_rated_discharge_lph" value={form.pump_rated_discharge_lph}
+                  onChange={handleChange} placeholder="e.g. 20000" />
+              </label>
+              <label>
+                Pump HP <span className="optional">(used only if rated discharge unknown)</span>
+                <input type="number" step="0.5" min="0" name="pump_hp" value={form.pump_hp}
+                  onChange={handleChange} placeholder="e.g. 5" />
+              </label>
+            </div>
+          </>
+        ) : (
+          <label>
+            Irrigation System Flow Rate (L/hour) <span className="optional">(optional, enables duration estimate)</span>
+            <input type="number" step="0.1" min="0" name="flow_rate_lph" value={form.flow_rate_lph}
+              onChange={handleChange} placeholder="e.g. 4000" />
+          </label>
+        )}
 
         {error && <p className="auth-error">{error}</p>}
         {success && <p className="auth-success">{success}</p>}
@@ -235,7 +277,15 @@ function ManageDevicesTab() {
     area_value: "",
     area_unit: "acre",
     flow_rate_lph: "",
+    crop: "",
+    row_spacing_cm: "",
+    emitter_spacing_cm: "",
+    emitter_discharge_lph: "",
+    pipe_diameter_mm: "",
+    pump_hp: "",
+    pump_rated_discharge_lph: "",
   });
+  const [showAdvancedFor, setShowAdvancedFor] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -263,24 +313,36 @@ function ManageDevicesTab() {
       area_value: device.area_value ?? "",
       area_unit: device.area_unit || "acre",
       flow_rate_lph: device.flow_rate_lph ?? "",
+      crop: device.crop || "",
+      row_spacing_cm: device.row_spacing_cm ?? "",
+      emitter_spacing_cm: device.emitter_spacing_cm ?? "",
+      emitter_discharge_lph: device.emitter_discharge_lph ?? "",
+      pipe_diameter_mm: device.pipe_diameter_mm ?? "",
+      pump_hp: device.pump_hp ?? "",
+      pump_rated_discharge_lph: device.pump_rated_discharge_lph ?? "",
     });
     setError(null);
   };
 
   const cancelEditing = () => {
     setEditingId(null);
+    setShowAdvancedFor(null);
     setError(null);
   };
 
   const saveEditing = async (deviceId) => {
     try {
-      const payload = {
-        ...editForm,
-        area_value: editForm.area_value !== "" ? parseFloat(editForm.area_value) : null,
-        flow_rate_lph: editForm.flow_rate_lph !== "" ? parseFloat(editForm.flow_rate_lph) : null,
-      };
+      const numericFields = [
+        "area_value", "flow_rate_lph", "row_spacing_cm", "emitter_spacing_cm",
+        "emitter_discharge_lph", "pipe_diameter_mm", "pump_hp", "pump_rated_discharge_lph",
+      ];
+      const payload = { ...editForm };
+      numericFields.forEach((field) => {
+        payload[field] = editForm[field] !== "" ? parseFloat(editForm[field]) : null;
+      });
       await updateDevice(deviceId, payload);
       setEditingId(null);
+      setShowAdvancedFor(null);
       loadDevices();
     } catch (err) {
       setError(err.response?.data?.detail || "Failed to update device.");
@@ -322,7 +384,8 @@ function ManageDevicesTab() {
           </thead>
           <tbody>
             {devices.map((d) => (
-              <tr key={d.device_id}>
+              <React.Fragment key={d.device_id}>
+              <tr>
                 <td>{d.device_id}</td>
                 {editingId === d.device_id ? (
                   <>
@@ -385,6 +448,15 @@ function ManageDevicesTab() {
                       <button className="btn-secondary" onClick={cancelEditing}>
                         Cancel
                       </button>
+                      <button
+                        className="btn-secondary"
+                        type="button"
+                        onClick={() =>
+                          setShowAdvancedFor(showAdvancedFor === d.device_id ? null : d.device_id)
+                        }
+                      >
+                        {showAdvancedFor === d.device_id ? "Hide" : "🔧 Drip System"}
+                      </button>
                     </td>
                   </>
                 ) : (
@@ -409,6 +481,66 @@ function ManageDevicesTab() {
                   </>
                 )}
               </tr>
+              {showAdvancedFor === d.device_id && (
+                <tr className="advanced-row">
+                  <td colSpan="7">
+                    <div className="advanced-drip-form">
+                      <strong>Drip System Parameters</strong> — used to calculate flow rate
+                      automatically instead of guessing it.
+                      <div className="admin-form-row">
+                        <label>
+                          Crop
+                          <input type="text" value={editForm.crop}
+                            onChange={(e) => setEditForm({ ...editForm, crop: e.target.value })}
+                            placeholder="e.g. Ladyfinger (Okra)" />
+                        </label>
+                        <label>
+                          Row Spacing (cm)
+                          <input type="number" step="0.1" value={editForm.row_spacing_cm}
+                            onChange={(e) => setEditForm({ ...editForm, row_spacing_cm: e.target.value })}
+                            placeholder="e.g. 45" />
+                        </label>
+                        <label>
+                          Emitter Spacing (cm)
+                          <input type="number" step="0.1" value={editForm.emitter_spacing_cm}
+                            onChange={(e) => setEditForm({ ...editForm, emitter_spacing_cm: e.target.value })}
+                            placeholder="e.g. 20" />
+                        </label>
+                      </div>
+                      <div className="admin-form-row">
+                        <label>
+                          Emitter Discharge (L/hr)
+                          <input type="number" step="0.1" value={editForm.emitter_discharge_lph}
+                            onChange={(e) => setEditForm({ ...editForm, emitter_discharge_lph: e.target.value })}
+                            placeholder="e.g. 4" />
+                        </label>
+                        <label>
+                          Pipe Diameter (mm)
+                          <input type="number" step="0.1" value={editForm.pipe_diameter_mm}
+                            onChange={(e) => setEditForm({ ...editForm, pipe_diameter_mm: e.target.value })}
+                            placeholder="e.g. 20" />
+                        </label>
+                        <label>
+                          Pump HP
+                          <input type="number" step="0.5" value={editForm.pump_hp}
+                            onChange={(e) => setEditForm({ ...editForm, pump_hp: e.target.value })}
+                            placeholder="e.g. 5" />
+                        </label>
+                        <label>
+                          Pump Rated Discharge (L/hr)
+                          <input type="number" step="1" value={editForm.pump_rated_discharge_lph}
+                            onChange={(e) => setEditForm({ ...editForm, pump_rated_discharge_lph: e.target.value })}
+                            placeholder="e.g. 20000 (preferred over HP estimate)" />
+                        </label>
+                      </div>
+                      <button className="btn-primary" type="button" onClick={() => saveEditing(d.device_id)}>
+                        Save Drip System Settings
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

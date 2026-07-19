@@ -7,7 +7,12 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from app.services.irrigation_area_utils import area_to_square_meters, compute_total_water_needed
+from app.services.irrigation_area_utils import (
+    area_to_square_meters,
+    compute_total_water_needed,
+    compute_irrigation_system_flow_rate,
+    estimate_pump_discharge_lph,
+)
 
 
 def test_acre_to_square_meters():
@@ -61,3 +66,67 @@ def test_duration_computed_when_flow_rate_given():
 def test_duration_is_none_when_no_flow_rate_given():
     result = compute_total_water_needed(22.66, area_value=1, area_unit="acre")
     assert result["recommended_duration_hours"] is None
+
+
+def test_pump_hp_estimate_matches_reference_table_at_known_points():
+    assert estimate_pump_discharge_lph(5) == 20000
+    assert estimate_pump_discharge_lph(10) == 37000
+
+
+def test_pump_hp_estimate_interpolates_between_known_points():
+    estimate_3_5hp = estimate_pump_discharge_lph(3.75)
+    assert 13500 < estimate_3_5hp < 20000  # between the 3hp and 5hp reference points
+
+
+def test_system_demand_exceeds_pump_supply_requires_multiple_zones():
+    """
+    The scenario from the user: 1 acre okra, 20cm emitter spacing, 5HP pump.
+    A single acre's worth of emitters vastly exceeds what one pump can
+    supply simultaneously — this must be reflected as zones_needed > 1,
+    not silently ignored.
+    """
+    result = compute_irrigation_system_flow_rate(
+        area_value=1, area_unit="acre",
+        row_spacing_cm=45, emitter_spacing_cm=20,
+        emitter_discharge_lph=4,
+        pump_hp=5,
+    )
+    assert result["system_demand_lph"] > result["pump_supply_lph"]
+    assert result["zones_needed"] > 1
+    assert result["effective_flow_rate_lph"] == result["pump_supply_lph"]
+    assert result["pump_supply_is_estimated"] is True
+
+
+def test_direct_pump_rating_is_preferred_over_hp_estimate():
+    result = compute_irrigation_system_flow_rate(
+        area_value=1, area_unit="acre",
+        row_spacing_cm=45, emitter_spacing_cm=20,
+        emitter_discharge_lph=4,
+        pump_rated_discharge_lph=25000,
+        pump_hp=5,  # should be ignored since a direct rating was given
+    )
+    assert result["pump_supply_lph"] == 25000
+    assert result["pump_supply_is_estimated"] is False
+
+
+def test_small_field_with_powerful_pump_needs_only_one_zone():
+    result = compute_irrigation_system_flow_rate(
+        area_value=500, area_unit="square_meter",
+        row_spacing_cm=45, emitter_spacing_cm=20,
+        emitter_discharge_lph=4,
+        pump_rated_discharge_lph=50000,
+    )
+    assert result["zones_needed"] == 1
+    assert result["effective_flow_rate_lph"] == result["system_demand_lph"]
+
+
+def test_missing_pump_info_raises_clear_error():
+    try:
+        compute_irrigation_system_flow_rate(
+            area_value=1, area_unit="acre",
+            row_spacing_cm=45, emitter_spacing_cm=20,
+            emitter_discharge_lph=4,
+        )
+        assert False, "Expected ValueError when neither pump rating nor HP is given"
+    except ValueError:
+        pass

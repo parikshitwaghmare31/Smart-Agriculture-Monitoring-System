@@ -52,6 +52,13 @@ async def register_device(payload: DeviceCreate, admin: dict = Depends(require_a
         "area_value": payload.area_value,
         "area_unit": payload.area_unit,
         "flow_rate_lph": payload.flow_rate_lph,
+        "crop": payload.crop,
+        "row_spacing_cm": payload.row_spacing_cm,
+        "emitter_spacing_cm": payload.emitter_spacing_cm,
+        "emitter_discharge_lph": payload.emitter_discharge_lph,
+        "pipe_diameter_mm": payload.pipe_diameter_mm,
+        "pump_hp": payload.pump_hp,
+        "pump_rated_discharge_lph": payload.pump_rated_discharge_lph,
         "created_at": datetime.now(timezone.utc),
         "created_by": admin["email"],
     }
@@ -120,6 +127,20 @@ async def update_device(
         updates["area_unit"] = payload.area_unit
     if payload.flow_rate_lph is not None:
         updates["flow_rate_lph"] = payload.flow_rate_lph
+    if payload.crop is not None:
+        updates["crop"] = payload.crop
+    if payload.row_spacing_cm is not None:
+        updates["row_spacing_cm"] = payload.row_spacing_cm
+    if payload.emitter_spacing_cm is not None:
+        updates["emitter_spacing_cm"] = payload.emitter_spacing_cm
+    if payload.emitter_discharge_lph is not None:
+        updates["emitter_discharge_lph"] = payload.emitter_discharge_lph
+    if payload.pipe_diameter_mm is not None:
+        updates["pipe_diameter_mm"] = payload.pipe_diameter_mm
+    if payload.pump_hp is not None:
+        updates["pump_hp"] = payload.pump_hp
+    if payload.pump_rated_discharge_lph is not None:
+        updates["pump_rated_discharge_lph"] = payload.pump_rated_discharge_lph
     if payload.owner_email is not None:
         new_owner = await db[settings.USER_COLLECTION].find_one({"email": payload.owner_email})
         if not new_owner:

@@ -33,6 +33,11 @@ class FieldAreaInfo(BaseModel):
     area_square_meters: float
     total_liters_needed: float
     recommended_duration_hours: Optional[float] = None
+    num_emitters: Optional[int] = None
+    system_demand_lph: Optional[float] = None
+    pump_supply_lph: Optional[float] = None
+    pump_supply_is_estimated: Optional[bool] = None
+    zones_needed: Optional[int] = None
 
 
 class PredictionResponse(BaseModel):
