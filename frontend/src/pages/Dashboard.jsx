@@ -7,7 +7,7 @@ import { getLatestReadings, getSensorHistory, getDevices, checkHealth } from "..
 
 const POLL_INTERVAL_MS = 5000;
 
-export default function Dashboard({ user, onLogout, onOpenAdminPanel }) {
+export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDiseaseClassifier }) {
   const [latest, setLatest] = useState(null);
   const [history, setHistory] = useState([]);
   const [devices, setDevices] = useState([]);
@@ -70,6 +70,9 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel }) {
           👤 {user?.full_name} <span className="muted-text">({user?.role})</span>
         </span>
         <div className="user-bar-actions">
+          <button className="btn-secondary" onClick={onOpenDiseaseClassifier}>
+            🌿 Disease Classifier
+          </button>
           {user?.role === "admin" && (
             <button className="btn-secondary" onClick={onOpenAdminPanel}>
               🛠️ Admin Panel

@@ -26,6 +26,11 @@ EXPECTED_PATHS = {
     "/api/v1/auth/me",
     "/api/v1/devices",
     "/api/v1/devices/my",
+    "/api/v1/users",
+    "/api/v1/disease/crops",
+    "/api/v1/disease/status",
+    "/api/v1/disease/classify",
+    "/api/v1/disease/classes",
     "/",
 }
 

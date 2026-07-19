@@ -5,6 +5,14 @@ import {
   updateDevice,
   deleteDevice,
   getAllUsers,
+  updateUser,
+  deleteUser,
+  getDiseaseModelStatus,
+  getDiseaseClasses,
+  createDiseaseClass,
+  updateDiseaseClass,
+  deleteDiseaseClass,
+  deployDiseaseModel,
 } from "../services/authApi";
 
 const TABS = {
@@ -12,6 +20,8 @@ const TABS = {
   MANAGE: "manage",
   USERS: "users",
   GUIDE: "guide",
+  RECOMMENDATIONS: "recommendations",
+  TRAIN_MODEL: "train_model",
 };
 
 export default function AdminPanel() {
@@ -46,12 +56,26 @@ export default function AdminPanel() {
         >
           📘 ESP32 Setup Guide
         </button>
+        <button
+          className={activeTab === TABS.RECOMMENDATIONS ? "admin-tab active" : "admin-tab"}
+          onClick={() => setActiveTab(TABS.RECOMMENDATIONS)}
+        >
+          🩺 Recommendation Rules
+        </button>
+        <button
+          className={activeTab === TABS.TRAIN_MODEL ? "admin-tab active" : "admin-tab"}
+          onClick={() => setActiveTab(TABS.TRAIN_MODEL)}
+        >
+          🧠 Train Custom Model
+        </button>
       </div>
 
       {activeTab === TABS.REGISTER && <RegisterDeviceTab />}
       {activeTab === TABS.MANAGE && <ManageDevicesTab />}
       {activeTab === TABS.USERS && <UserManagementTab />}
       {activeTab === TABS.GUIDE && <Esp32GuideTab />}
+      {activeTab === TABS.RECOMMENDATIONS && <RecommendationRulesTab />}
+      {activeTab === TABS.TRAIN_MODEL && <TrainCustomModelTab />}
     </div>
   );
 }
@@ -281,15 +305,68 @@ function ManageDevicesTab() {
 
 function UserManagementTab() {
   const [users, setUsers] = useState([]);
+  const [editingEmail, setEditingEmail] = useState(null);
+  const [editForm, setEditForm] = useState({ full_name: "", role: "farmer", new_password: "" });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getAllUsers()
-      .then(setUsers)
-      .catch(() => setError("Failed to load users."))
-      .finally(() => setLoading(false));
+  const loadUsers = useCallback(async () => {
+    try {
+      const data = await getAllUsers();
+      setUsers(data);
+    } catch (err) {
+      setError("Failed to load users.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  const startEditing = (user) => {
+    setEditingEmail(user.email);
+    setEditForm({ full_name: user.full_name, role: user.role, new_password: "" });
+    setError(null);
+  };
+
+  const cancelEditing = () => {
+    setEditingEmail(null);
+    setError(null);
+  };
+
+  const saveEditing = async (email) => {
+    setError(null);
+    const updates = { full_name: editForm.full_name, role: editForm.role };
+    if (editForm.new_password) {
+      updates.new_password = editForm.new_password;
+    }
+    try {
+      await updateUser(email, updates);
+      setEditingEmail(null);
+      loadUsers();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to update user.");
+    }
+  };
+
+  const handleDelete = async (user) => {
+    if (
+      !window.confirm(
+        `Delete the account for ${user.full_name} (${user.email})? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    setError(null);
+    try {
+      await deleteUser(user.email);
+      loadUsers();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to delete user.");
+    }
+  };
 
   if (loading) return <div className="panel">Loading users...</div>;
 
@@ -305,24 +382,80 @@ function UserManagementTab() {
             <th>Role</th>
             <th>Devices Owned</th>
             <th>Joined</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {users.map((u) => (
             <tr key={u.email}>
-              <td>{u.full_name}</td>
-              <td>{u.email}</td>
-              <td>
-                <span className={u.role === "admin" ? "role-badge admin" : "role-badge farmer"}>
-                  {u.role}
-                </span>
-              </td>
-              <td>{u.device_count}</td>
-              <td>{new Date(u.created_at).toLocaleDateString()}</td>
+              {editingEmail === u.email ? (
+                <>
+                  <td>
+                    <input
+                      className="inline-edit-input"
+                      value={editForm.full_name}
+                      onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+                    />
+                  </td>
+                  <td>{u.email}</td>
+                  <td>
+                    <select
+                      className="inline-edit-input"
+                      value={editForm.role}
+                      onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                    >
+                      <option value="farmer">farmer</option>
+                      <option value="admin">admin</option>
+                    </select>
+                  </td>
+                  <td>{u.device_count}</td>
+                  <td>
+                    <input
+                      className="inline-edit-input"
+                      type="password"
+                      placeholder="Reset password (optional)"
+                      value={editForm.new_password}
+                      onChange={(e) => setEditForm({ ...editForm, new_password: e.target.value })}
+                    />
+                  </td>
+                  <td className="admin-table-actions">
+                    <button className="btn-secondary" onClick={() => saveEditing(u.email)}>
+                      Save
+                    </button>
+                    <button className="btn-secondary" onClick={cancelEditing}>
+                      Cancel
+                    </button>
+                  </td>
+                </>
+              ) : (
+                <>
+                  <td>{u.full_name}</td>
+                  <td>{u.email}</td>
+                  <td>
+                    <span className={u.role === "admin" ? "role-badge admin" : "role-badge farmer"}>
+                      {u.role}
+                    </span>
+                  </td>
+                  <td>{u.device_count}</td>
+                  <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                  <td className="admin-table-actions">
+                    <button className="btn-secondary" onClick={() => startEditing(u)}>
+                      Edit
+                    </button>
+                    <button className="btn-danger" onClick={() => handleDelete(u)}>
+                      Delete
+                    </button>
+                  </td>
+                </>
+              )}
             </tr>
           ))}
         </tbody>
       </table>
+      <p className="muted-text" style={{ marginTop: "10px" }}>
+        Note: a user can't be deleted while they still own devices (reassign or delete those
+        first), and the last remaining admin account can't be demoted or deleted.
+      </p>
     </div>
   );
 }
@@ -378,6 +511,390 @@ function Esp32GuideTab() {
         Multiple boards on one farm just need different <code>DEVICE_ID</code> values — everything
         else (WiFi, broker, credentials) can stay the same across all of them.
       </p>
+    </div>
+  );
+}
+
+function RecommendationRulesTab() {
+  const [classes, setClasses] = useState([]);
+  const [form, setForm] = useState({
+    crop: "",
+    disease_label: "",
+    irrigation_advice: "",
+    fertilizer_advice: "",
+    spraying_advice: "",
+  });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadClasses = useCallback(async () => {
+    try {
+      const data = await getDiseaseClasses();
+      setClasses(data);
+    } catch (err) {
+      setError("Failed to load recommendation rules.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadClasses();
+  }, [loadClasses]);
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    try {
+      await createDiseaseClass(form);
+      setSuccess(`Recommendation for ${form.crop} / ${form.disease_label} added.`);
+      setForm({
+        crop: "",
+        disease_label: "",
+        irrigation_advice: "",
+        fertilizer_advice: "",
+        spraying_advice: "",
+      });
+      loadClasses();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to add recommendation.");
+    }
+  };
+
+  const startEditing = (item) => {
+    setEditingId(item.id);
+    setEditForm({
+      irrigation_advice: item.irrigation_advice,
+      fertilizer_advice: item.fertilizer_advice,
+      spraying_advice: item.spraying_advice,
+    });
+  };
+
+  const saveEditing = async (id) => {
+    try {
+      await updateDiseaseClass(id, editForm);
+      setEditingId(null);
+      loadClasses();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to update recommendation.");
+    }
+  };
+
+  const handleDelete = async (item) => {
+    if (!window.confirm(`Delete the recommendation for ${item.crop} / ${item.disease_label}?`)) {
+      return;
+    }
+    try {
+      await deleteDiseaseClass(item.id);
+      loadClasses();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to delete recommendation.");
+    }
+  };
+
+  if (loading) return <div className="panel">Loading recommendation rules...</div>;
+
+  return (
+    <>
+      <div className="panel">
+        <h3>Add a Recommendation Rule</h3>
+        <p className="muted-text">
+          These define what a farmer sees after the disease classifier identifies a condition.
+          The "crop" and "disease label" here should exactly match the class names your trained
+          model uses (see the Train Custom Model tab).
+        </p>
+        <form onSubmit={handleCreate} className="admin-form">
+          <label>
+            Crop
+            <input
+              type="text"
+              name="crop"
+              value={form.crop}
+              onChange={handleChange}
+              placeholder="e.g. Tomato"
+              required
+            />
+          </label>
+          <label>
+            Disease Label
+            <input
+              type="text"
+              name="disease_label"
+              value={form.disease_label}
+              onChange={handleChange}
+              placeholder="e.g. Early Blight (or 'Healthy')"
+              required
+            />
+          </label>
+          <label>
+            Irrigation Advice
+            <input
+              type="text"
+              name="irrigation_advice"
+              value={form.irrigation_advice}
+              onChange={handleChange}
+              placeholder="e.g. Reduce watering frequency, avoid overhead irrigation"
+              required
+            />
+          </label>
+          <label>
+            Fertilizer Advice
+            <input
+              type="text"
+              name="fertilizer_advice"
+              value={form.fertilizer_advice}
+              onChange={handleChange}
+              placeholder="e.g. Apply balanced NPK, avoid excess nitrogen"
+              required
+            />
+          </label>
+          <label>
+            Spraying Advice
+            <input
+              type="text"
+              name="spraying_advice"
+              value={form.spraying_advice}
+              onChange={handleChange}
+              placeholder="e.g. Apply copper-based fungicide every 7-10 days"
+              required
+            />
+          </label>
+
+          {error && <p className="auth-error">{error}</p>}
+          {success && <p className="auth-success">{success}</p>}
+
+          <button type="submit" className="btn-primary">
+            Add Recommendation
+          </button>
+        </form>
+      </div>
+
+      <div className="panel">
+        <h3>Existing Recommendations ({classes.length})</h3>
+        {classes.length === 0 ? (
+          <p className="muted-text">No recommendation rules configured yet.</p>
+        ) : (
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Crop</th>
+                <th>Disease</th>
+                <th>Irrigation</th>
+                <th>Fertilizer</th>
+                <th>Spraying</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {classes.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.crop}</td>
+                  <td>{c.disease_label}</td>
+                  {editingId === c.id ? (
+                    <>
+                      <td>
+                        <input
+                          className="inline-edit-input"
+                          value={editForm.irrigation_advice}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, irrigation_advice: e.target.value })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="inline-edit-input"
+                          value={editForm.fertilizer_advice}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, fertilizer_advice: e.target.value })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          className="inline-edit-input"
+                          value={editForm.spraying_advice}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, spraying_advice: e.target.value })
+                          }
+                        />
+                      </td>
+                      <td className="admin-table-actions">
+                        <button className="btn-secondary" onClick={() => saveEditing(c.id)}>
+                          Save
+                        </button>
+                        <button className="btn-secondary" onClick={() => setEditingId(null)}>
+                          Cancel
+                        </button>
+                      </td>
+                    </>
+                  ) : (
+                    <>
+                      <td>{c.irrigation_advice}</td>
+                      <td>{c.fertilizer_advice}</td>
+                      <td>{c.spraying_advice}</td>
+                      <td className="admin-table-actions">
+                        <button className="btn-secondary" onClick={() => startEditing(c)}>
+                          Edit
+                        </button>
+                        <button className="btn-danger" onClick={() => handleDelete(c)}>
+                          Delete
+                        </button>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </>
+  );
+}
+
+function TrainCustomModelTab() {
+  const [status, setStatus] = useState(null);
+  const [modelFile, setModelFile] = useState(null);
+  const [classNamesFile, setClassNamesFile] = useState(null);
+  const [reportFile, setReportFile] = useState(null);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const loadStatus = useCallback(() => {
+    getDiseaseModelStatus()
+      .then(setStatus)
+      .catch(() => setStatus({ model_loaded: false }));
+  }, []);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  const handleDeploy = async (e) => {
+    e.preventDefault();
+    if (!modelFile || !classNamesFile) {
+      setError("Both model.onnx and class_names.json are required.");
+      return;
+    }
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+    try {
+      const data = await deployDiseaseModel(modelFile, classNamesFile, reportFile);
+      setSuccess(`Model deployed successfully — ${data.num_classes} classes now active.`);
+      loadStatus();
+    } catch (err) {
+      setError(err.response?.data?.detail || "Failed to deploy model.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="panel">
+      <h3>🧠 Train Your Own Disease Classifier</h3>
+      <p className="muted-text">
+        Training happens on your own machine (not on this server) — TensorFlow's memory
+        footprint would exceed this app's hosting limits. The workflow:
+      </p>
+
+      <ol className="setup-guide-steps">
+        <li>
+          <strong>Collect labeled photos.</strong> Organize them into folders named{" "}
+          <code>Crop__DiseaseLabel</code> (e.g. <code>Tomato__Early_Blight</code>,{" "}
+          <code>Tomato__Healthy</code>). A public dataset like PlantVillage (Kaggle) works well.
+        </li>
+        <li>
+          <strong>Don't have labeled photos yet?</strong> Use{" "}
+          <code>ml/disease_classifier/scripts/cluster_unlabeled_images.py</code> first — it
+          groups similar-looking raw photos together automatically (unsupervised), so you only
+          need to label whole groups instead of every photo individually.
+        </li>
+        <li>
+          <strong>Train:</strong> on your own machine, run:
+          <br />
+          <code>
+            pip install -r ml/disease_classifier/requirements-training.txt
+            <br />
+            python ml/disease_classifier/scripts/train_classifier.py --data-dir /path/to/dataset
+          </code>
+        </li>
+        <li>
+          <strong>Deploy:</strong> upload the resulting <code>model.onnx</code> and{" "}
+          <code>class_names.json</code> below (plus <code>training_report.json</code>{" "}
+          optionally, for your own reference). The new model activates immediately — no restart
+          needed.
+        </li>
+        <li>
+          <strong>Add recommendations:</strong> go to the "Recommendation Rules" tab and add
+          irrigation/fertilizer/spraying advice for each crop+disease combination your model
+          recognizes.
+        </li>
+      </ol>
+
+      <div className="disease-model-status">
+        {status?.model_loaded ? (
+          <>
+            <p className="auth-success">
+              ✅ A model is currently deployed with {status.num_classes} classes:{" "}
+              {status.classes.map((c) => `${c.crop}/${c.disease_label}`).join(", ")}
+            </p>
+            {status.training_report && (
+              <p className="muted-text">
+                Training report: validation accuracy{" "}
+                {(status.training_report.phase2_final_val_accuracy * 100).toFixed(1)}% on{" "}
+                {status.training_report.num_classes} classes.
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="empty-state-banner">No model deployed yet. Upload one below to get started.</p>
+        )}
+      </div>
+
+      <form onSubmit={handleDeploy} className="admin-form">
+        <label>
+          model.onnx
+          <input
+            type="file"
+            accept=".onnx"
+            onChange={(e) => setModelFile(e.target.files[0])}
+            required
+          />
+        </label>
+        <label>
+          class_names.json
+          <input
+            type="file"
+            accept=".json"
+            onChange={(e) => setClassNamesFile(e.target.files[0])}
+            required
+          />
+        </label>
+        <label>
+          training_report.json <span className="optional">(optional)</span>
+          <input
+            type="file"
+            accept=".json"
+            onChange={(e) => setReportFile(e.target.files[0])}
+          />
+        </label>
+
+        {error && <p className="auth-error">{error}</p>}
+        {success && <p className="auth-success">{success}</p>}
+
+        <button type="submit" className="btn-primary" disabled={loading}>
+          {loading ? "Deploying..." : "Deploy Model"}
+        </button>
+      </form>
     </div>
   );
 }

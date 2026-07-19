@@ -35,3 +35,49 @@ export const deleteDevice = (deviceId) =>
   api.delete(`/devices/${encodeURIComponent(deviceId)}`).then((r) => r.data);
 
 export const getAllUsers = () => api.get("/users").then((r) => r.data);
+
+export const updateUser = (email, updates) =>
+  api.patch(`/users/${encodeURIComponent(email)}`, updates).then((r) => r.data);
+
+export const deleteUser = (email) =>
+  api.delete(`/users/${encodeURIComponent(email)}`).then((r) => r.data);
+
+// --- Disease classifier ---
+
+export const getDiseaseModelStatus = () => api.get("/disease/status").then((r) => r.data);
+
+export const getDiseaseCrops = () => api.get("/disease/crops").then((r) => r.data);
+
+export const classifyPlantPhoto = (imageFile) => {
+  const formData = new FormData();
+  formData.append("image", imageFile);
+  return api
+    .post("/disease/classify", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((r) => r.data);
+};
+
+export const getDiseaseClasses = () => api.get("/disease/classes").then((r) => r.data);
+
+export const createDiseaseClass = (payload) =>
+  api.post("/disease/classes", payload).then((r) => r.data);
+
+export const updateDiseaseClass = (id, updates) =>
+  api.patch(`/disease/classes/${id}`, updates).then((r) => r.data);
+
+export const deleteDiseaseClass = (id) => api.delete(`/disease/classes/${id}`).then((r) => r.data);
+
+export const deployDiseaseModel = (modelFile, classNamesFile, trainingReportFile) => {
+  const formData = new FormData();
+  formData.append("onnx_model_file", modelFile);
+  formData.append("class_names_file", classNamesFile);
+  if (trainingReportFile) {
+    formData.append("training_report_file", trainingReportFile);
+  }
+  return api
+    .post("/disease/deploy-model", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((r) => r.data);
+};

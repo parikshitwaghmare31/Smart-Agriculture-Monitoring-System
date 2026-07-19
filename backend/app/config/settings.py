@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     # ML model
     MODEL_PATH: str = "/app/ml/models/irrigation_model.pkl"
 
+    # Disease classifier (offline-trained, ONNX-served)
+    DISEASE_MODEL_DIR: str = "/app/ml/disease_classifier/models"
+    DISEASE_CLASS_COLLECTION: str = "disease_classes"
+    TRAINING_STATUS_COLLECTION: str = "training_status"
+
     # CORS
     CORS_ORIGINS: str = "*"
 

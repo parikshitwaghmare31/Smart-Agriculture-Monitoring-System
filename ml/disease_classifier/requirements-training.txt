@@ -1,0 +1,10 @@
+# Offline training dependencies for the disease classifier.
+# Install and run these on YOUR OWN machine — this file is intentionally
+# NOT referenced by the production backend's requirements.txt, since
+# TensorFlow's memory footprint would exceed Render's free-tier RAM limit.
+
+tensorflow==2.16.1
+tf2onnx==1.16.1
+scikit-learn==1.5.0
+numpy==1.26.4
+pillow==10.3.0

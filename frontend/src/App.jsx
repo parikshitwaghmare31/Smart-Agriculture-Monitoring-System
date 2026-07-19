@@ -3,15 +3,17 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
+import DiseaseClassifier from "./pages/DiseaseClassifier";
 import "./App.css";
 
 // View names, kept simple and explicit rather than pulling in a router
-// library for what is currently just 4 screens.
+// library for what is currently just 5 screens.
 const VIEWS = {
   LOGIN: "login",
   REGISTER: "register",
   DASHBOARD: "dashboard",
   ADMIN: "admin",
+  DISEASE_CLASSIFIER: "disease_classifier",
 };
 
 export default function App() {
@@ -78,11 +80,16 @@ export default function App() {
     );
   }
 
+  if (view === VIEWS.DISEASE_CLASSIFIER) {
+    return <DiseaseClassifier onBack={() => setView(VIEWS.DASHBOARD)} />;
+  }
+
   return (
     <Dashboard
       user={user}
       onLogout={handleLogout}
       onOpenAdminPanel={() => setView(VIEWS.ADMIN)}
+      onOpenDiseaseClassifier={() => setView(VIEWS.DISEASE_CLASSIFIER)}
     />
   );
 }
