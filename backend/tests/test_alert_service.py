@@ -76,3 +76,33 @@ def test_send_irrigation_alert_no_ops_gracefully_when_disabled():
     assert result["sms_sent"] is False
     assert result["whatsapp_sent"] is False
     assert result["reason"] == "alerts_not_configured"
+
+
+def test_should_send_alert_ignores_failed_previous_attempts():
+    """
+    Regression test for a real bug found during manual testing: an alert
+    attempt that failed (e.g. Twilio wasn't configured yet at the time)
+    must NOT count toward the cooldown, since nothing was actually
+    delivered to the farmer. Only successful sends should start the
+    cooldown clock.
+    """
+    import asyncio
+    from unittest.mock import AsyncMock
+    from app.services.alert_service import should_send_alert
+
+    # Simulate a MongoDB collection where find_one is queried with a filter
+    # that requires sms_sent or whatsapp_sent to be True. Since our fake
+    # "database" only has a FAILED log entry, a correctly-filtered query
+    # should find nothing and return None, allowing a fresh send.
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=None)  # no successful attempt exists
+    mock_db = {"irrigation_alerts_log": mock_collection}
+
+    result = asyncio.run(should_send_alert(mock_db, "esp32-field-04"))
+    assert result is True
+
+    # Confirm the query actually filters on success, not just device_id
+    called_filter = mock_collection.find_one.call_args[0][0]
+    assert "$or" in called_filter
+    assert {"sms_sent": True} in called_filter["$or"]
+    assert {"whatsapp_sent": True} in called_filter["$or"]

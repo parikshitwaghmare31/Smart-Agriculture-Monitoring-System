@@ -128,16 +128,22 @@ async def should_send_alert(db, device_id: str) -> bool:
     Enforces a cooldown period so the same device doesn't spam a farmer
     with repeat alerts every time a new sensor reading confirms the same
     ongoing dry condition. Checks the alert log for this device's most
-    recent alert timestamp.
+    recent SUCCESSFUL alert timestamp — a failed attempt (e.g. Twilio
+    wasn't configured yet at the time) must never block a future retry,
+    since nothing was actually delivered to the farmer.
     """
-    last_alert = await db[settings.ALERT_LOG_COLLECTION].find_one(
-        {"device_id": device_id}, sort=[("timestamp", -1)]
+    last_successful_alert = await db[settings.ALERT_LOG_COLLECTION].find_one(
+        {
+            "device_id": device_id,
+            "$or": [{"sms_sent": True}, {"whatsapp_sent": True}],
+        },
+        sort=[("timestamp", -1)],
     )
-    if not last_alert:
+    if not last_successful_alert:
         return True
 
     cooldown_cutoff = datetime.now(timezone.utc) - timedelta(hours=settings.ALERT_COOLDOWN_HOURS)
-    last_timestamp = last_alert["timestamp"]
+    last_timestamp = last_successful_alert["timestamp"]
     if last_timestamp.tzinfo is None:
         last_timestamp = last_timestamp.replace(tzinfo=timezone.utc)
 
