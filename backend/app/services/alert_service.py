@@ -158,25 +158,52 @@ async def check_and_send_irrigation_alert(db, reading: dict):
         from app.services.ml_service import ml_service
         from app.services.irrigation_area_utils import compute_total_water_needed
 
+        device_id = reading.get("device_id", "unknown")
+
         if not ml_service.loaded and not alert_service.enabled:
-            return  # nothing meaningful to do
+            app_logger.debug(f"Alert check skipped for {device_id}: ML model not loaded and alerts not enabled")
+            return
 
         irrigate, confidence, water_amount, _ = ml_service.predict(
             reading["soil_moisture"], reading["temperature"], reading["humidity"]
         )
         if not irrigate:
+            app_logger.debug(f"Alert check for {device_id}: irrigation not needed (irrigate=False), no alert sent")
             return
 
-        device = await db[settings.DEVICE_COLLECTION].find_one({"device_id": reading["device_id"]})
+        device = await db[settings.DEVICE_COLLECTION].find_one({"device_id": device_id})
         if not device:
-            return  # unregistered/orphan device — no farmer to notify
+            app_logger.info(
+                f"Alert check for {device_id}: irrigation needed but device is not registered "
+                f"(no entry in devices collection) — cannot determine an owner to notify"
+            )
+            return
 
         farmer = await db[settings.USER_COLLECTION].find_one({"email": device["owner_email"]})
-        if not farmer or not farmer.get("alerts_enabled") or not farmer.get("phone_number"):
+        if not farmer:
+            app_logger.warning(
+                f"Alert check for {device_id}: registered owner_email "
+                f"'{device['owner_email']}' has no matching user account"
+            )
+            return
+        if not farmer.get("alerts_enabled"):
+            app_logger.info(
+                f"Alert check for {device_id}: owner {farmer['email']} has not enabled alerts, skipping"
+            )
+            return
+        if not farmer.get("phone_number"):
+            app_logger.info(
+                f"Alert check for {device_id}: owner {farmer['email']} has alerts enabled but no phone number set"
+            )
             return
 
-        if not await should_send_alert(db, reading["device_id"]):
+        if not await should_send_alert(db, device_id):
+            app_logger.info(f"Alert check for {device_id}: still within cooldown period, skipping")
             return
+
+        app_logger.info(
+            f"Alert check for {device_id}: all conditions met, sending alert to {farmer['email']}"
+        )
 
         total_liters = None
         duration_hours = None
