@@ -3,11 +3,14 @@ import SensorCard from "../components/SensorCard";
 import PredictionPanel from "../components/PredictionPanel";
 import SensorChart from "../components/SensorChart";
 import DeviceSelector from "../components/DeviceSelector";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 import { getLatestReadings, getSensorHistory, getDevices, checkHealth } from "../services/api";
+import { useLanguage } from "../i18n/LanguageContext";
 
 const POLL_INTERVAL_MS = 5000;
 
-export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDiseaseClassifier }) {
+export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDiseaseClassifier, onOpenProfile }) {
+  const { t } = useLanguage();
   const [latest, setLatest] = useState(null);
   const [history, setHistory] = useState([]);
   const [devices, setDevices] = useState([]);
@@ -51,17 +54,20 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDise
     <div className="dashboard">
       <header className="dashboard-header">
         <div>
-          <h1>🌱 Smart Agriculture Monitoring</h1>
+          <h1>🌱 {t("appTitle")}</h1>
           <p className="subtitle">
             {selectedDeviceId
-              ? `Viewing: ${selectedDeviceId}`
+              ? `${t("viewingDevice")}: ${selectedDeviceId}`
               : latest
-              ? `Viewing: All devices (showing ${latest.device_id})`
-              : "Waiting for sensor data..."}
+              ? `${t("viewingAllDevices")} (${latest.device_id})`
+              : t("waitingForData")}
           </p>
         </div>
-        <div className={`status-badge ${health?.mongo_connected ? "online" : "offline"}`}>
-          {health?.mongo_connected ? "● Live" : "● Disconnected"}
+        <div className="dashboard-header-right">
+          <LanguageSwitcher />
+          <div className={`status-badge ${health?.mongo_connected ? "online" : "offline"}`}>
+            {health?.mongo_connected ? `● ${t("live")}` : `● ${t("disconnected")}`}
+          </div>
         </div>
       </header>
 
@@ -70,16 +76,19 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDise
           👤 {user?.full_name} <span className="muted-text">({user?.role})</span>
         </span>
         <div className="user-bar-actions">
+          <button className="btn-secondary" onClick={onOpenProfile}>
+            ⚙️ {t("myProfile")}
+          </button>
           <button className="btn-secondary" onClick={onOpenDiseaseClassifier}>
-            🌿 Disease Classifier
+            🌿 {t("diseaseClassifier")}
           </button>
           {user?.role === "admin" && (
             <button className="btn-secondary" onClick={onOpenAdminPanel}>
-              🛠️ Admin Panel
+              🛠️ {t("adminPanel")}
             </button>
           )}
           <button className="btn-secondary" onClick={onLogout}>
-            Sign Out
+            {t("signOut")}
           </button>
         </div>
       </div>
@@ -92,23 +101,19 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDise
 
       {devices.length === 0 && (
         <div className="empty-state-banner">
-          {user?.role === "admin"
-            ? "No devices have been registered yet. Use the Admin Panel to register a sensor node and assign it to a farmer."
-            : "No sensor nodes are linked to your account yet. Contact your administrator to have your device registered and assigned to you."}
+          {user?.role === "admin" ? t("noDevicesRegisteredAdmin") : t("noDevicesRegisteredFarmer")}
         </div>
       )}
 
       {devices.length > 0 && selectedDevice && !selectedDevice.has_data && (
         <div className="empty-state-banner">
-          "{selectedDevice.label || selectedDevice.device_id}" is registered but hasn't sent any
-          readings yet. Once the sensor node powers on and publishes data, it will appear here
-          automatically.
+          "{selectedDevice.label || selectedDevice.device_id}" {t("deviceNoDataYet")}
         </div>
       )}
 
       <section className="sensor-cards">
         <SensorCard
-          title="Soil Moisture"
+          title={t("soilMoisture")}
           value={latest?.soil_moisture}
           unit="%"
           icon="💧"
@@ -116,7 +121,7 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDise
           high={80}
         />
         <SensorCard
-          title="Temperature"
+          title={t("temperature")}
           value={latest?.temperature}
           unit="°C"
           icon="🌡️"
@@ -124,7 +129,7 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDise
           high={35}
         />
         <SensorCard
-          title="Humidity"
+          title={t("humidity")}
           value={latest?.humidity}
           unit="%"
           icon="☁️"
@@ -139,7 +144,7 @@ export default function Dashboard({ user, onLogout, onOpenAdminPanel, onOpenDise
       </section>
 
       <footer className="dashboard-footer">
-        {lastUpdated && `Last updated: ${lastUpdated.toLocaleTimeString()}`}
+        {lastUpdated && `${t("lastUpdated")}: ${lastUpdated.toLocaleTimeString()}`}
       </footer>
     </div>
   );

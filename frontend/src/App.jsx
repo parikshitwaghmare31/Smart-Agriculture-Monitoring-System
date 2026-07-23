@@ -4,19 +4,23 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AdminPanel from "./pages/AdminPanel";
 import DiseaseClassifier from "./pages/DiseaseClassifier";
+import ProfileSettings from "./pages/ProfileSettings";
+import { useLanguage } from "./i18n/LanguageContext";
 import "./App.css";
 
 // View names, kept simple and explicit rather than pulling in a router
-// library for what is currently just 5 screens.
+// library for what is currently just 6 screens.
 const VIEWS = {
   LOGIN: "login",
   REGISTER: "register",
   DASHBOARD: "dashboard",
   ADMIN: "admin",
   DISEASE_CLASSIFIER: "disease_classifier",
+  PROFILE: "profile",
 };
 
 export default function App() {
+  const { setLanguage } = useLanguage();
   const [user, setUser] = useState(null);
   const [view, setView] = useState(VIEWS.LOGIN);
   const [checkedStorage, setCheckedStorage] = useState(false);
@@ -27,7 +31,11 @@ export default function App() {
     const storedToken = localStorage.getItem("access_token");
     if (storedUser && storedToken) {
       try {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        if (parsedUser?.preferred_language) {
+          setLanguage(parsedUser.preferred_language);
+        }
         setView(VIEWS.DASHBOARD);
       } catch {
         localStorage.removeItem("user");
@@ -35,6 +43,7 @@ export default function App() {
       }
     }
     setCheckedStorage(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLoginSuccess = (loggedInUser) => {
@@ -47,6 +56,11 @@ export default function App() {
     localStorage.removeItem("user");
     setUser(null);
     setView(VIEWS.LOGIN);
+  };
+
+  const handleProfileUpdated = (updatedUser) => {
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
   };
 
   // Avoid a flash of the login screen while we check localStorage on first render.
@@ -84,12 +98,22 @@ export default function App() {
     return <DiseaseClassifier onBack={() => setView(VIEWS.DASHBOARD)} />;
   }
 
+  if (view === VIEWS.PROFILE) {
+    return (
+      <ProfileSettings
+        onBack={() => setView(VIEWS.DASHBOARD)}
+        onProfileUpdated={handleProfileUpdated}
+      />
+    );
+  }
+
   return (
     <Dashboard
       user={user}
       onLogout={handleLogout}
       onOpenAdminPanel={() => setView(VIEWS.ADMIN)}
       onOpenDiseaseClassifier={() => setView(VIEWS.DISEASE_CLASSIFIER)}
+      onOpenProfile={() => setView(VIEWS.PROFILE)}
     />
   );
 }

@@ -24,6 +24,7 @@ from app.services.ml_service import ml_service
 from app.services.mqtt_service import init_mqtt_service, mqtt_service_instance
 from app.services.auth_service import hash_password
 from app.services.disease_service import disease_service
+from app.services.alert_service import alert_service
 
 from app.routes import (
     sensor_routes,
@@ -75,6 +76,7 @@ async def lifespan(app: FastAPI):
     await bootstrap_admin_account()
     ml_service.load()
     disease_service.load()
+    alert_service.load()
 
     loop = asyncio.get_event_loop()
     init_mqtt_service(loop)

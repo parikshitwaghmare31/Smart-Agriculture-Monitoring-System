@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { requestPrediction } from "../services/api";
+import { useLanguage } from "../i18n/LanguageContext";
 
 export default function PredictionPanel({ latestReading, selectedDeviceId }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({ soil_moisture: 40, temperature: 28, humidity: 50 });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -32,7 +34,7 @@ export default function PredictionPanel({ latestReading, selectedDeviceId }) {
       const data = await requestPrediction({ ...form, device_id: deviceId });
       setResult(data);
     } catch (err) {
-      setError("Prediction request failed. Is the backend running?");
+      setError(t("predictionFailed"));
     } finally {
       setLoading(false);
     }
@@ -41,27 +43,27 @@ export default function PredictionPanel({ latestReading, selectedDeviceId }) {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h3>Irrigation Prediction</h3>
+        <h3>{t("irrigationPrediction")}</h3>
         <button className="btn-secondary" onClick={useLiveReading} type="button">
-          Use Latest Reading
+          {t("useLatestReading")}
         </button>
       </div>
 
       <form onSubmit={handleSubmit} className="prediction-form">
         <label>
-          Soil Moisture (%)
+          {t("soilMoisture")} (%)
           <input type="number" name="soil_moisture" value={form.soil_moisture} onChange={handleChange} min="0" max="100" step="0.1" required />
         </label>
         <label>
-          Temperature (°C)
+          {t("temperature")} (°C)
           <input type="number" name="temperature" value={form.temperature} onChange={handleChange} min="-10" max="60" step="0.1" required />
         </label>
         <label>
-          Humidity (%)
+          {t("humidity")} (%)
           <input type="number" name="humidity" value={form.humidity} onChange={handleChange} min="0" max="100" step="0.1" required />
         </label>
         <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? "Predicting..." : "Predict Irrigation"}
+          {loading ? t("predicting") : t("predictIrrigation")}
         </button>
       </form>
 
@@ -70,7 +72,7 @@ export default function PredictionPanel({ latestReading, selectedDeviceId }) {
       {result && (
         <div className={`prediction-result ${result.irrigate ? "irrigate-yes" : "irrigate-no"}`}>
           <div className="prediction-result-headline">
-            {result.irrigate ? "💧 Irrigation Recommended" : "✅ No Irrigation Needed"}
+            {result.irrigate ? t("irrigationRecommended") : t("noIrrigationNeeded")}
           </div>
 
           {result.irrigate && (
@@ -79,55 +81,49 @@ export default function PredictionPanel({ latestReading, selectedDeviceId }) {
                 <div className="prediction-water-amount">
                   {result.field_area.zones_needed > 1 && (
                     <div className="prediction-zones-warning">
-                      ⚠️ Your pump can't cover the whole field at once — split irrigation into{" "}
-                      <strong>{result.field_area.zones_needed} zones/shifts</strong>, cycling
-                      through them one at a time.
+                      {t("zonesWarning")}{" "}
+                      <strong>{result.field_area.zones_needed} {t("zonesShifts")}</strong>.
                     </div>
                   )}
                   <div className="prediction-total-water">
-                    Total for your {result.field_area.area_value} {result.field_area.area_unit}{" "}
-                    field: <strong>{result.field_area.total_liters_needed.toLocaleString()} L</strong>
+                    {t("totalForYourField")} {result.field_area.area_value} {result.field_area.area_unit}{" "}
+                    {t("field")}: <strong>{result.field_area.total_liters_needed.toLocaleString()} L</strong>
                   </div>
                   {result.field_area.recommended_duration_hours !== null && (
                     <div className="prediction-duration">
-                      Total pump run-time needed: approximately{" "}
-                      <strong>{result.field_area.recommended_duration_hours} hours</strong>
-                      {result.field_area.zones_needed > 1 ? ", split across all zones" : ""}.
+                      {t("totalPumpRuntime")}{" "}
+                      <strong>{result.field_area.recommended_duration_hours} {t("hours")}</strong>
+                      {result.field_area.zones_needed > 1 ? t("splitAcrossZones") : ""}.
                     </div>
                   )}
                   {result.field_area.system_demand_lph && (
                     <div className="prediction-system-details">
-                      System: {result.field_area.num_emitters?.toLocaleString()} emitters demanding{" "}
+                      {result.field_area.num_emitters?.toLocaleString()} emitters demanding{" "}
                       {result.field_area.system_demand_lph.toLocaleString()} L/hr · Pump supplies{" "}
                       {result.field_area.pump_supply_lph.toLocaleString()} L/hr
                       {result.field_area.pump_supply_is_estimated
-                        ? " (estimated from HP — enter your pump's actual rated discharge for a more accurate figure)"
+                        ? " (estimated from HP)"
                         : ""}
                     </div>
                   )}
                   <div className="prediction-depth-note muted-text">
-                    (Irrigation depth: {result.water_amount_liters} L/m² — equivalent to{" "}
-                    {result.water_amount_liters}mm of water)
+                    ({result.water_amount_liters} L/m² ≈ {result.water_amount_liters}mm)
                   </div>
                 </div>
               ) : (
                 <div className="prediction-water-amount">
                   <div>
-                    Recommended irrigation depth: <strong>{result.water_amount_liters} L/m²</strong>{" "}
-                    <span className="muted-text">(equivalent to {result.water_amount_liters}mm)</span>
+                    <strong>{result.water_amount_liters} L/m²</strong>{" "}
+                    <span className="muted-text">(≈ {result.water_amount_liters}mm)</span>
                   </div>
-                  <p className="auth-tip">
-                    This is a per-square-meter figure. To see the total liters needed for your
-                    actual field, ask your administrator to register your field's size (and
-                    optionally your irrigation system's flow rate) for this device.
-                  </p>
+                  <p className="auth-tip">{t("irrigationDepthNote")}</p>
                 </div>
               )}
             </>
           )}
 
           <div className="prediction-confidence">
-            Confidence: {(result.confidence * 100).toFixed(1)}%
+            {t("confidence")}: {(result.confidence * 100).toFixed(1)}%
           </div>
           <p className="prediction-reasoning">{result.reasoning}</p>
         </div>

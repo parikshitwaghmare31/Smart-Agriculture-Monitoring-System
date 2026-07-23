@@ -53,6 +53,15 @@ class Settings(BaseSettings):
     DISEASE_CLASS_COLLECTION: str = "disease_classes"
     TRAINING_STATUS_COLLECTION: str = "training_status"
 
+    # SMS/WhatsApp irrigation alerts (Twilio)
+    ALERTS_ENABLED: bool = False
+    TWILIO_ACCOUNT_SID: str = ""
+    TWILIO_AUTH_TOKEN: str = ""
+    TWILIO_SMS_FROM_NUMBER: str = ""       # your Twilio phone number, e.g. +15551234567
+    TWILIO_WHATSAPP_FROM_NUMBER: str = ""  # Twilio WhatsApp sender, e.g. whatsapp:+14155238886 (sandbox default)
+    ALERT_COOLDOWN_HOURS: float = 6.0      # minimum gap between repeat alerts for the same device
+    ALERT_LOG_COLLECTION: str = "irrigation_alerts_log"
+
     # CORS
     CORS_ORIGINS: str = "*"
 

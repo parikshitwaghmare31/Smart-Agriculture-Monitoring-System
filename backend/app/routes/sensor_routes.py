@@ -51,6 +51,10 @@ async def create_sensor_reading(
     result = await db[settings.SENSOR_COLLECTION].insert_one(document)
     document["_id"] = result.inserted_id
     app_logger.info(f"Sensor reading stored via REST for device {reading.device_id}")
+
+    from app.services.alert_service import check_and_send_irrigation_alert
+    await check_and_send_irrigation_alert(db, document)
+
     return _serialize(document)
 
 

@@ -21,3 +21,6 @@ email-validator==2.1.1
 # Training happens offline; see ml/disease_classifier/requirements-training.txt
 onnxruntime==1.18.0
 pillow==10.3.0
+
+# SMS/WhatsApp irrigation alerts
+twilio==9.2.3

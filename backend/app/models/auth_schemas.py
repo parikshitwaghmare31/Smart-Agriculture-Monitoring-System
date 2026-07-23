@@ -11,6 +11,10 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, description="Minimum 8 characters")
     full_name: str = Field(..., min_length=1)
+    phone_number: Optional[str] = Field(
+        default=None,
+        description="Include country code, e.g. +919876543210 — required to receive SMS/WhatsApp irrigation alerts",
+    )
 
 
 class UserOut(BaseModel):
@@ -18,6 +22,10 @@ class UserOut(BaseModel):
     full_name: str
     role: Literal["admin", "farmer"]
     created_at: datetime
+    phone_number: Optional[str] = None
+    alerts_enabled: bool = False
+    alert_channel: Literal["sms", "whatsapp", "both"] = "sms"
+    preferred_language: Literal["en", "mr"] = "en"
 
 
 class UserWithDeviceCount(UserOut):
@@ -30,6 +38,19 @@ class UserUpdate(BaseModel):
     new_password: Optional[str] = Field(
         default=None, min_length=8, description="Admin-triggered password reset for this user"
     )
+    phone_number: Optional[str] = None
+    alerts_enabled: Optional[bool] = None
+    alert_channel: Optional[Literal["sms", "whatsapp", "both"]] = None
+    preferred_language: Optional[Literal["en", "mr"]] = None
+
+
+class MyProfileUpdate(BaseModel):
+    """A restricted subset of UserUpdate — a farmer can change their own
+    contact/alert/language preferences, but never their own role."""
+    phone_number: Optional[str] = None
+    alerts_enabled: Optional[bool] = None
+    alert_channel: Optional[Literal["sms", "whatsapp", "both"]] = None
+    preferred_language: Optional[Literal["en", "mr"]] = None
 
 
 class Token(BaseModel):

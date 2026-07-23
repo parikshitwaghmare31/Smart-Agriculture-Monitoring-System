@@ -689,3 +689,40 @@
   padding: 6px 8px;
   font-size: 13px;
 }
+
+/* ---- Language switcher ---- */
+.language-switcher {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.dashboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auth-language-switcher {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+/* ---- Profile settings ---- */
+.profile-language-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+
+.profile-section-title {
+  font-size: 14px;
+  color: #1b5e20;
+  margin: 8px 0 -4px;
+}

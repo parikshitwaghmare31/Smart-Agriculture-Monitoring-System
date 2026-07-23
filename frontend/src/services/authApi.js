@@ -1,8 +1,8 @@
 import api from "./api";
 
-export const registerFarmer = (email, password, fullName) =>
+export const registerFarmer = (email, password, fullName, phoneNumber) =>
   api
-    .post("/auth/register", { email, password, full_name: fullName })
+    .post("/auth/register", { email, password, full_name: fullName, phone_number: phoneNumber || null })
     .then((r) => r.data);
 
 export const login = (email, password) => {
@@ -18,6 +18,9 @@ export const login = (email, password) => {
 };
 
 export const getMyProfile = () => api.get("/auth/me").then((r) => r.data);
+
+export const updateMyProfile = (updates) =>
+  api.patch("/auth/me", updates).then((r) => r.data);
 
 export const getMyDevices = () => api.get("/devices/my").then((r) => r.data);
 

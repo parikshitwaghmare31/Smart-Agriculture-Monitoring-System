@@ -99,6 +99,9 @@ class MQTTService:
         await db[settings.SENSOR_COLLECTION].insert_one(document)
         app_logger.info(f"Stored sensor reading from {document['device_id']}")
 
+        from app.services.alert_service import check_and_send_irrigation_alert
+        await check_and_send_irrigation_alert(db, document)
+
 
 mqtt_service_instance: "MQTTService | None" = None
 

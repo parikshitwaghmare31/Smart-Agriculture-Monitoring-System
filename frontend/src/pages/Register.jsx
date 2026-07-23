@@ -1,10 +1,14 @@
 import React, { useState } from "react";
 import { registerFarmer } from "../services/authApi";
+import { useLanguage } from "../i18n/LanguageContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 
 export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
+  const { t } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -14,7 +18,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
     setError(null);
     setLoading(true);
     try {
-      await registerFarmer(email, password, fullName);
+      await registerFarmer(email, password, fullName, phoneNumber);
       setSuccess(true);
     } catch (err) {
       const detail = err.response?.data?.detail || "Registration failed. Please try again.";
@@ -29,17 +33,11 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
       <div className="auth-page">
         <div className="auth-card">
           <h1>🌱 Smart Agriculture</h1>
-          <h2>Account Created!</h2>
-          <p className="auth-success">
-            Your farmer account has been created. You can now sign in.
-          </p>
-          <p className="auth-tip">
-            Once signed in, ask your system administrator to register your sensor
-            node(s) and link them to your account ({email}) so you can start
-            viewing your field's live data.
-          </p>
+          <h2>{t("registerTitle")}</h2>
+          <p className="auth-success">{t("registrationSuccess")}</p>
+          <p className="auth-tip">{t("registrationDeviceNote")} ({email})</p>
           <button type="button" className="btn-primary" onClick={onSwitchToLogin}>
-            Go to Sign In
+            {t("backToLogin")}
           </button>
         </div>
       </div>
@@ -49,12 +47,16 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <div className="auth-language-switcher">
+          <LanguageSwitcher />
+        </div>
         <h1>🌱 Smart Agriculture</h1>
-        <h2>Farmer Registration</h2>
+        <h2>{t("registerTitle")}</h2>
+        <p className="muted-text">{t("registerSubtitle")}</p>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <label>
-            Full Name
+            {t("fullName")}
             <input
               type="text"
               value={fullName}
@@ -64,7 +66,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
             />
           </label>
           <label>
-            Email
+            {t("email")}
             <input
               type="email"
               value={email}
@@ -74,7 +76,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
             />
           </label>
           <label>
-            Password
+            {t("password")}
             <input
               type="password"
               value={password}
@@ -84,18 +86,28 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
               autoComplete="new-password"
             />
           </label>
+          <label>
+            {t("phoneNumber")} <span className="optional">({t("phoneNumberHint")})</span>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+919876543210"
+              autoComplete="tel"
+            />
+          </label>
 
           {error && <p className="auth-error">{error}</p>}
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Creating account..." : "Register"}
+            {loading ? t("creatingAccount") : t("createAccount")}
           </button>
         </form>
 
         <p className="auth-switch">
-          Already have an account?{" "}
+          {t("alreadyHaveAccount")}{" "}
           <button type="button" className="link-button" onClick={onSwitchToLogin}>
-            Sign in
+            {t("backToLogin")}
           </button>
         </p>
       </div>

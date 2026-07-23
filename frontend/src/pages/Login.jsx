@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { login } from "../services/authApi";
+import { useLanguage } from "../i18n/LanguageContext";
+import LanguageSwitcher from "../components/LanguageSwitcher";
 
 export default function Login({ onLoginSuccess, onSwitchToRegister }) {
+  const { t, setLanguage } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -15,6 +18,11 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
       const data = await login(email, password);
       localStorage.setItem("access_token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      // Sync the dashboard's language to whatever this account has saved,
+      // so a farmer who set Marathi previously sees it immediately again.
+      if (data.user?.preferred_language) {
+        setLanguage(data.user.preferred_language);
+      }
       onLoginSuccess(data.user);
     } catch (err) {
       const detail = err.response?.data?.detail || "Login failed. Check your credentials.";
@@ -27,12 +35,15 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <div className="auth-language-switcher">
+          <LanguageSwitcher />
+        </div>
         <h1>🌱 Smart Agriculture</h1>
-        <h2>Sign In</h2>
+        <h2>{t("loginTitle")}</h2>
 
         <form onSubmit={handleSubmit} className="auth-form">
           <label>
-            Email
+            {t("email")}
             <input
               type="email"
               value={email}
@@ -42,7 +53,7 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
             />
           </label>
           <label>
-            Password
+            {t("password")}
             <input
               type="password"
               value={password}
@@ -55,14 +66,14 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
           {error && <p className="auth-error">{error}</p>}
 
           <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? t("signingIn") : t("signIn")}
           </button>
         </form>
 
         <p className="auth-switch">
-          Don't have an account?{" "}
+          {t("noAccountYet")}{" "}
           <button type="button" className="link-button" onClick={onSwitchToRegister}>
-            Register as a farmer
+            {t("registerAsFarmer")}
           </button>
         </p>
       </div>
