@@ -49,33 +49,45 @@ class AlertService:
             app_logger.error("twilio package not installed — cannot send SMS/WhatsApp alerts")
             self.enabled = False
 
-    def _send_sms(self, to_number: str, message: str) -> bool:
+    def _send_sms(self, to_number: str, message: str) -> tuple[bool, str | None]:
         if not settings.TWILIO_SMS_FROM_NUMBER:
-            app_logger.warning("TWILIO_SMS_FROM_NUMBER not configured — cannot send SMS")
-            return False
+            return False, "TWILIO_SMS_FROM_NUMBER not configured"
         try:
             self.client.messages.create(
                 body=message, from_=settings.TWILIO_SMS_FROM_NUMBER, to=to_number
             )
-            return True
+            return True, None
         except Exception as e:
-            app_logger.error(f"Failed to send SMS to {to_number}: {e}")
-            return False
+            error_detail = str(e)
+            app_logger.error(f"Failed to send SMS to {to_number}: {error_detail}")
+            return False, error_detail
 
-    def _send_whatsapp(self, to_number: str, message: str) -> bool:
+    def _send_whatsapp(self, to_number: str, message: str) -> tuple[bool, str | None]:
         if not settings.TWILIO_WHATSAPP_FROM_NUMBER:
-            app_logger.warning("TWILIO_WHATSAPP_FROM_NUMBER not configured — cannot send WhatsApp message")
-            return False
+            return False, "TWILIO_WHATSAPP_FROM_NUMBER not configured"
         try:
+            # Normalize both From and To to always carry the "whatsapp:"
+            # channel prefix, regardless of whether the admin included it
+            # when setting TWILIO_WHATSAPP_FROM_NUMBER — Twilio rejects the
+            # request entirely if the two sides don't match on this.
+            from_number = settings.TWILIO_WHATSAPP_FROM_NUMBER.strip()
+            if not from_number.startswith("whatsapp:"):
+                from_number = f"whatsapp:{from_number}"
+
+            to_formatted = to_number.strip()
+            if not to_formatted.startswith("whatsapp:"):
+                to_formatted = f"whatsapp:{to_formatted}"
+
             self.client.messages.create(
                 body=message,
-                from_=settings.TWILIO_WHATSAPP_FROM_NUMBER,
-                to=f"whatsapp:{to_number}" if not to_number.startswith("whatsapp:") else to_number,
+                from_=from_number,
+                to=to_formatted,
             )
-            return True
+            return True, None
         except Exception as e:
-            app_logger.error(f"Failed to send WhatsApp message to {to_number}: {e}")
-            return False
+            error_detail = str(e)
+            app_logger.error(f"Failed to send WhatsApp message to {to_number}: {error_detail}")
+            return False, error_detail
 
     def send_irrigation_alert(self, phone_number: str, channel: str, message: str) -> dict:
         """
